@@ -1,0 +1,2 @@
+- add emotes (emojis) and chat
+- let other players see where the current playing player is dragging the puck
