@@ -34,7 +34,7 @@ export default function GameScreen() {
                                 <span className="color-dot" style={{background: p.color}}></span>
                                 {p.name}
                             </div>
-                            <div>{p.score} pts</div>
+                            <div>{p.totalScore + p.score} pts</div>
                         </div>
                     ))}
                 </div>

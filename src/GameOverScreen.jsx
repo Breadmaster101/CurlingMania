@@ -6,7 +6,7 @@ export default function GameOverScreen() {
     const { gameState, myId, isHost } = useGameStore();
 
     // Sort players by score descending
-    const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+    const sortedPlayers = [...gameState.players].sort((a, b) => (b.totalScore + b.score) - (a.totalScore + a.score));
     const winner = sortedPlayers.length > 0 ? sortedPlayers[0] : null;
 
     return (
@@ -32,7 +32,7 @@ export default function GameOverScreen() {
                             <span className="color-dot" style={{ background: p.color }}></span>
                             {p.name} {p.id === myId ? '(You)' : ''}
                         </div>
-                        <strong style={{ color: 'var(--text-muted)' }}>{p.score} pts</strong>
+                        <strong style={{ color: 'var(--text-muted)' }}>{p.totalScore + p.score} pts</strong>
                     </div>
                 ))}
             </div>

@@ -38,7 +38,7 @@ class GameStore {
             const newColor = isLateJoin ? '#94a3b8' : PLAYER_COLORS[this.gameState.players.length % PLAYER_COLORS.length];
             
             this.gameState.players.push({
-                id: data.id, name: data.name, color: newColor, score: 0, 
+                id: data.id, name: data.name, color: newColor, score: 0, totalScore: 0, 
                 stonesLeft: isLateJoin ? 0 : 3, isSpectator: isLateJoin
             });
             this.hostBroadcastState();
@@ -109,7 +109,7 @@ class GameStore {
         socket.emit('create_room', this.currentRoom);
         
         this.gameState.players.push({
-            id: this.myId, name: this.myName, color: PLAYER_COLORS[0], score: 0, stonesLeft: 3, isSpectator: false
+            id: this.myId, name: this.myName, color: PLAYER_COLORS[0], score: 0, totalScore: 0, stonesLeft: 3, isSpectator: false
         });
         this.gameState.status = 'LOBBY';
         this.errorMsg = '';
@@ -134,6 +134,7 @@ class GameStore {
         this.gameState.players.forEach(p => { 
             if(!p.isSpectator) p.stonesLeft = 3; 
             p.score = 0;
+            p.totalScore = 0;
         });
         this.activeStone = { x: 200, y: 720 };
         this.hostBroadcastState();
@@ -251,7 +252,11 @@ class GameStore {
             } else {
                 this.gameState.round++;
                 this.gameState.turnIndex = 0;
-                validPlayers.forEach(p => p.stonesLeft = 3);
+                validPlayers.forEach(p => {
+                    p.totalScore += p.score;
+                    p.score = 0;
+                    p.stonesLeft = 3;
+                });
                 this.gameState.stones = [];
                 this.gameState.status = 'PLAYING';
             }
@@ -286,7 +291,7 @@ class GameStore {
             }
         });
         
-        this.gameState.players.sort((a, b) => b.score - a.score);
+        this.gameState.players.sort((a, b) => (b.totalScore + b.score) - (a.totalScore + a.score));
     }
 
     hostBroadcastState() {
