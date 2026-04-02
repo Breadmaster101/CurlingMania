@@ -129,7 +129,18 @@ class GameStore {
         if (!this.isHost) return;
         this.gameState.status = 'PLAYING';
         this.gameState.round = 1;
-        this.gameState.turnIndex = 0;
+        
+        // Randomize who goes first for the 1st round
+        const validPlayerIndices = this.gameState.players
+            .map((p, i) => p.isSpectator ? -1 : i)
+            .filter(i => i !== -1);
+        
+        if (validPlayerIndices.length > 0) {
+            this.gameState.turnIndex = validPlayerIndices[Math.floor(Math.random() * validPlayerIndices.length)];
+        } else {
+            this.gameState.turnIndex = 0;
+        }
+
         this.gameState.stones = [];
         this.gameState.players.forEach(p => { 
             if(!p.isSpectator) p.stonesLeft = 3; 
