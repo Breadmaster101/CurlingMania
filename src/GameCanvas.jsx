@@ -79,7 +79,7 @@ export default function GameCanvas() {
                             ctx.fillRect(0, 0, 400, 450); 
                         }
                     } else {
-                        drawStone(200, 720, currentPlayer.color);
+                        drawStone(state.activeStone.x, state.activeStone.y, currentPlayer.color);
                     }
                 }
             }

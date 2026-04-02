@@ -54,6 +54,11 @@ class GameStore {
                     this.gameState.status = 'MOVING';
                     this.hostBroadcastThrow(id, currentPlayer.color, data.x, data.y, data.vx, data.vy);
                 }
+            } else if (data.action === 'DRAG' && this.gameState.status === 'PLAYING') {
+                const currentPlayer = this.getActivePlayer();
+                if (currentPlayer && currentPlayer.id === id) {
+                    this.hostBroadcastDrag(id, data.x, data.y);
+                }
             }
         });
 
@@ -63,6 +68,10 @@ class GameStore {
                 this.applyGameState(payload.state);
             } else if (payload.action === 'SYNC_THROW') {
                 this.applyThrow(payload.throwData);
+            } else if (payload.action === 'SYNC_DRAG') {
+                if (payload.playerId !== this.myId) {
+                    this.applyDrag(payload.x, payload.y);
+                }
             }
         });
     }
@@ -150,6 +159,19 @@ class GameStore {
         const throwData = { playerId, color, x, y, vx, vy };
         socket.emit('host_broadcast', { roomCode: this.currentRoom, data: { action: 'SYNC_THROW', throwData } });
         this.applyThrow(throwData);
+    }
+
+    hostBroadcastDrag(playerId, x, y) {
+        socket.emit('host_broadcast', { roomCode: this.currentRoom, data: { action: 'SYNC_DRAG', playerId, x, y } });
+        this.applyDrag(x, y);
+    }
+
+    applyDrag(x, y) {
+        this.activeStone = { x, y };
+        // We do not need to notify(), saving render cycles. 
+        // Or if we want other clients to see it updating smoothly, they render from getSnapshot.
+        // Actually we probably should notify() if they are not moving their mouse to trigger their own renders,
+        // Wait, the canvas has requestAnimationFrame which polls getSnapshot() constantly! So no notify needed for canvas!
     }
 
     applyThrow(data) {
@@ -249,18 +271,21 @@ class GameStore {
 
     calculateScores() {
         const targetX = 200, targetY = 150, maxRadius = 100;
+
+        // Reset all player scores to recalculate them from current stone positions
+        this.gameState.players.forEach(p => p.score = 0);
+
         this.gameState.stones.forEach(s => {
-            if(s.counted) return; 
             let dist = Math.hypot(s.x - targetX, s.y - targetY);
             if (dist <= maxRadius) {
                 let points = Math.floor(maxRadius - dist);
                 let player = this.gameState.players.find(p => p.id === s.playerId);
                 if(player) {
                     player.score += points;
-                    s.counted = true;
                 }
             }
         });
+        
         this.gameState.players.sort((a, b) => b.score - a.score);
     }
 
@@ -303,6 +328,19 @@ class GameStore {
         
         this.mouseHistory.push({ x: this.activeStone.x, y: this.activeStone.y, time: Date.now() });
         if (this.mouseHistory.length > 15) this.mouseHistory.shift(); 
+
+        const now = Date.now();
+        if (!this.lastDragSync || now - this.lastDragSync > 30) {
+            this.lastDragSync = now;
+            if (this.isHost) {
+                this.hostBroadcastDrag(this.myId, this.activeStone.x, this.activeStone.y);
+            } else {
+                socket.emit('client_send', { 
+                    roomCode: this.currentRoom, 
+                    data: { action: 'DRAG', x: this.activeStone.x, y: this.activeStone.y } 
+                });
+            }
+        }
 
         if (this.activeStone.y <= 450) this.releaseStone();
     }
