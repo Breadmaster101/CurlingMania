@@ -301,8 +301,6 @@ class GameStore {
                 }
             }
         });
-        
-        this.gameState.players.sort((a, b) => (b.totalScore + b.score) - (a.totalScore + a.score));
     }
 
     hostBroadcastState() {

@@ -28,15 +28,17 @@ export default function GameScreen() {
             <div className="panel panel-left">
                 <h2><Trophy size={20} /> Leaderboard</h2>
                 <div style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '10px' }}>
-                    {gameState.players.map(p => (
-                        <div key={p.id} className={`player-row ${p.isSpectator ? 'spectator' : ''} ${gameState.status !== 'GAMEOVER' && p.id === (currentPlayer?.id) ? 'active-turn' : ''}`}>
-                            <div style={{display: 'flex', alignItems: 'center'}}>
-                                <span className="color-dot" style={{background: p.color}}></span>
-                                {p.name}
+                    {[...gameState.players]
+                        .sort((a, b) => (b.totalScore + b.score) - (a.totalScore + a.score))
+                        .map(p => (
+                            <div key={p.id} className={`player-row ${p.isSpectator ? 'spectator' : ''} ${gameState.status !== 'GAMEOVER' && p.id === (currentPlayer?.id) ? 'active-turn' : ''}`}>
+                                <div style={{display: 'flex', alignItems: 'center'}}>
+                                    <span className="color-dot" style={{background: p.color}}></span>
+                                    {p.name}
+                                </div>
+                                <div>{p.totalScore + p.score} pts</div>
                             </div>
-                            <div>{p.totalScore + p.score} pts</div>
-                        </div>
-                    ))}
+                        ))}
                 </div>
             </div>
 
