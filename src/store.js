@@ -278,8 +278,8 @@ class GameStore {
         this.gameState.turnWarningPlayerName = '';
         this.gameState.turnTimeLeft = 0;
 
-        const AFK_TIMEOUT = 60; // seconds
-        const WARNING_AT = 50; // seconds (10s before timeout)
+        const AFK_TIMEOUT = 30; // seconds
+        const WARNING_AT = 20; // seconds (10s before timeout)
 
         this.turnTimerInterval = setInterval(() => {
             const elapsed = Math.floor((Date.now() - this.turnStartTime) / 1000);
