@@ -70,7 +70,10 @@ export default function GameCanvas() {
 
             // Active stone
             if (state.gameState.status === 'PLAYING') {
-                const currentPlayer = state.gameState.players.length > 0 ? state.gameState.players[state.gameState.turnIndex % state.gameState.players.length] : null;
+                const queue = state.gameState.turnQueue;
+                const qIdx = state.gameState.turnQueueIndex;
+                const currentPlayerId = (queue && qIdx < queue.length) ? queue[qIdx] : null;
+                const currentPlayer = currentPlayerId ? state.gameState.players.find(p => p.id === currentPlayerId) : null;
                 if (currentPlayer && currentPlayer.stonesLeft > 0 && !currentPlayer.isSpectator) {
                     if (currentPlayer.id === state.myId) {
                         drawStone(state.activeStone.x, state.activeStone.y, currentPlayer.color);

@@ -1,2 +1,4 @@
 - add emotes (emojis) and chat
 - use real physics engine
+- make multiplyer more robust
+- overhaul the ui since it looks really vibecoded rn

@@ -16,15 +16,28 @@ class GameStore {
         this.gameState = {
             players: [],
             stones: [],
-            turnIndex: 0,
+            turnQueue: [],      // Explicit ordered list of player IDs for this round
+            turnQueueIndex: 0,  // Current position in the turnQueue
             round: 1,
-            status: 'CONNECT' // New custom status for React UI ('CONNECT', 'LOBBY', 'PLAYING', 'MOVING', 'GAMEOVER')
+            leaderboard: [],    // Sorted copy for display (never used for turn logic)
+            status: 'CONNECT',  // 'CONNECT', 'LOBBY', 'PLAYING', 'MOVING', 'GAMEOVER'
+            gameMode: 'MANIA',  // 'MANIA' or 'ZEN'
+            turnWarning: false, // true when 10s remain before AFK skip
+            turnWarningPlayerName: '', // name of the player who will be skipped
+            turnTimeLeft: 0,    // seconds remaining before skip
         };
         
         this.activeStone = { x: 200, y: 720 };
         this.physicsInterval = null;
         this.mouseHistory = [];
         this.isGrabbing = false;
+
+        // AFK timer (host-only)
+        this.turnTimerInterval = null;
+        this.turnStartTime = null;
+
+        // Zen mode: remember the random order for all 3 rounds
+        this.zenPlayerOrder = null;
 
         this.listeners = new Set();
 
@@ -50,6 +63,7 @@ class GameStore {
             if (data.action === 'THROW' && this.gameState.status === 'PLAYING' && !this.physicsInterval) {
                 const currentPlayer = this.getActivePlayer();
                 if (currentPlayer && currentPlayer.id === id && currentPlayer.stonesLeft > 0) {
+                    this.clearTurnTimer(); // Stone was thrown, cancel AFK timer
                     currentPlayer.stonesLeft--;
                     this.gameState.status = 'MOVING';
                     this.hostBroadcastThrow(id, currentPlayer.color, data.x, data.y, data.vx, data.vy);
@@ -85,7 +99,7 @@ class GameStore {
         return () => this.listeners.delete(listener);
     }
 
-    // React Accessormethods
+    // React Accessor methods
     getSnapshot() {
         return {
             isHost: this.isHost,
@@ -101,9 +115,16 @@ class GameStore {
     }
 
     // Actions
+    setGameMode(mode) {
+        if (!this.isHost) return;
+        if (mode !== 'MANIA' && mode !== 'ZEN') return;
+        this.gameState.gameMode = mode;
+        this.hostBroadcastState();
+    }
+
     createRoom(name) {
         this.myName = name;
-        this.currentRoom = Math.random().toString(36).substring(2, 8).toUpperCase();
+        this.currentRoom = Math.random().toString(36).substring(2, 5).toUpperCase();
         this.isHost = true;
         
         socket.emit('create_room', this.currentRoom);
@@ -129,17 +150,6 @@ class GameStore {
         if (!this.isHost) return;
         this.gameState.status = 'PLAYING';
         this.gameState.round = 1;
-        
-        // Randomize who goes first for the 1st round
-        const validPlayerIndices = this.gameState.players
-            .map((p, i) => p.isSpectator ? -1 : i)
-            .filter(i => i !== -1);
-        
-        if (validPlayerIndices.length > 0) {
-            this.gameState.turnIndex = validPlayerIndices[Math.floor(Math.random() * validPlayerIndices.length)];
-        } else {
-            this.gameState.turnIndex = 0;
-        }
 
         this.gameState.stones = [];
         this.gameState.players.forEach(p => { 
@@ -147,11 +157,100 @@ class GameStore {
             p.score = 0;
             p.totalScore = 0;
         });
+
+        if (this.gameState.gameMode === 'ZEN') {
+            // Zen: randomize once, keep for all 3 rounds
+            this.buildZenTurnQueue(true);
+        } else {
+            // Mania: Round 1 randomize
+            this.buildTurnQueue(true);
+        }
+
         this.activeStone = { x: 200, y: 720 };
+        this.gameState.leaderboard = this.getSortedLeaderboard();
+        this.gameState.turnWarning = false;
+        this.gameState.turnWarningPlayerName = '';
+        this.gameState.turnTimeLeft = 0;
         this.hostBroadcastState();
+        this.startTurnTimer();
+    }
+
+    /**
+     * Builds a round-robin turn queue for Mania mode.
+     * Each player throws 1 stone per turn, cycling through all players
+     * until everyone has used all their stones.
+     * @param {boolean} randomize - If true, shuffle the starting order (round 1).
+     *                              If false, order by ascending previous-round score (loser first).
+     */
+    buildTurnQueue(randomize) {
+        let validPlayers = this.gameState.players.filter(p => !p.isSpectator);
+
+        if (randomize) {
+            // Fisher-Yates shuffle
+            for (let i = validPlayers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [validPlayers[i], validPlayers[j]] = [validPlayers[j], validPlayers[i]];
+            }
+        } else {
+            // Loser-first: sort ascending by previous round score (lowest score goes first)
+            validPlayers.sort((a, b) => a.prevRoundScore - b.prevRoundScore);
+        }
+
+        // Build round-robin queue: cycle through players, 1 stone each, for stonesLeft rounds
+        const maxStones = validPlayers.length > 0 ? validPlayers[0].stonesLeft : 0;
+        const queue = [];
+        for (let throwNum = 0; throwNum < maxStones; throwNum++) {
+            for (const p of validPlayers) {
+                if (p.stonesLeft > throwNum) {
+                    queue.push(p.id);
+                }
+            }
+        }
+
+        this.gameState.turnQueue = queue;
+        this.gameState.turnQueueIndex = 0;
+    }
+
+    /**
+     * Builds a turn queue for Zen mode.
+     * Each player throws 3 stones consecutively on their own rink.
+     * The order is randomized once and kept for all 3 rounds.
+     * @param {boolean} firstRound - If true, randomize and store the order.
+     */
+    buildZenTurnQueue(firstRound) {
+        let validPlayers;
+
+        if (firstRound) {
+            validPlayers = this.gameState.players.filter(p => !p.isSpectator);
+            // Fisher-Yates shuffle
+            for (let i = validPlayers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [validPlayers[i], validPlayers[j]] = [validPlayers[j], validPlayers[i]];
+            }
+            // Store order for reuse across rounds
+            this.zenPlayerOrder = validPlayers.map(p => p.id);
+        } else {
+            // Reuse stored order
+            validPlayers = this.zenPlayerOrder.map(id => 
+                this.gameState.players.find(p => p.id === id)
+            ).filter(Boolean);
+        }
+
+        // Each player gets 3 consecutive entries
+        const queue = [];
+        for (const p of validPlayers) {
+            const stones = p.stonesLeft || 3;
+            for (let i = 0; i < stones; i++) {
+                queue.push(p.id);
+            }
+        }
+
+        this.gameState.turnQueue = queue;
+        this.gameState.turnQueueIndex = 0;
     }
 
     returnToLobby() {
+        this.clearTurnTimer();
         if (this.isHost) {
             this.gameState.status = 'LOBBY';
             this.hostBroadcastState();
@@ -162,11 +261,125 @@ class GameStore {
     }
 
     getActivePlayer() {
-        if (this.gameState.players.length === 0) return null;
-        return this.gameState.players[this.gameState.turnIndex % this.gameState.players.length];
+        const queue = this.gameState.turnQueue;
+        const idx = this.gameState.turnQueueIndex;
+        if (!queue || idx >= queue.length) return null;
+        const playerId = queue[idx];
+        return this.gameState.players.find(p => p.id === playerId) || null;
     }
 
-    // Deterministic Physics Engine
+    // ─── AFK Timer ───────────────────────────────────────────
+
+    startTurnTimer() {
+        if (!this.isHost) return;
+        this.clearTurnTimer();
+        this.turnStartTime = Date.now();
+        this.gameState.turnWarning = false;
+        this.gameState.turnWarningPlayerName = '';
+        this.gameState.turnTimeLeft = 0;
+
+        const AFK_TIMEOUT = 60; // seconds
+        const WARNING_AT = 50; // seconds (10s before timeout)
+
+        this.turnTimerInterval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - this.turnStartTime) / 1000);
+            const remaining = AFK_TIMEOUT - elapsed;
+
+            if (elapsed >= AFK_TIMEOUT) {
+                // Time's up — skip
+                this.skipCurrentPlayer();
+                return;
+            }
+
+            if (elapsed >= WARNING_AT && !this.gameState.turnWarning) {
+                // Show warning to all
+                const player = this.getActivePlayer();
+                this.gameState.turnWarning = true;
+                this.gameState.turnWarningPlayerName = player ? player.name : 'Player';
+                this.gameState.turnTimeLeft = remaining;
+                this.hostBroadcastState();
+            } else if (this.gameState.turnWarning) {
+                // Update countdown
+                this.gameState.turnTimeLeft = remaining;
+                this.hostBroadcastState();
+            }
+        }, 1000);
+    }
+
+    clearTurnTimer() {
+        if (this.turnTimerInterval) {
+            clearInterval(this.turnTimerInterval);
+            this.turnTimerInterval = null;
+        }
+        this.turnStartTime = null;
+        this.gameState.turnWarning = false;
+        this.gameState.turnWarningPlayerName = '';
+        this.gameState.turnTimeLeft = 0;
+    }
+
+    skipCurrentPlayer() {
+        this.clearTurnTimer();
+
+        if (this.gameState.gameMode === 'ZEN') {
+            // In Zen, skip all remaining consecutive entries for this player
+            const currentId = this.gameState.turnQueue[this.gameState.turnQueueIndex];
+            while (
+                this.gameState.turnQueueIndex < this.gameState.turnQueue.length &&
+                this.gameState.turnQueue[this.gameState.turnQueueIndex] === currentId
+            ) {
+                this.gameState.turnQueueIndex++;
+            }
+            // Clear stones since we're moving to a new player's rink
+            this.gameState.stones = [];
+        } else {
+            // Mania: just skip one turn
+            this.gameState.turnQueueIndex++;
+        }
+
+        // Update the skipped player's stonesLeft
+        // (Already advanced past them, so we just check if round/game is over)
+
+        this.calculateScores();
+        this.gameState.leaderboard = this.getSortedLeaderboard();
+
+        // Check if round/game is over
+        if (this.gameState.turnQueueIndex >= this.gameState.turnQueue.length) {
+            if (this.gameState.round >= 3) {
+                this.gameState.status = 'GAMEOVER';
+            } else {
+                const validPlayers = this.gameState.players.filter(p => !p.isSpectator);
+                validPlayers.forEach(p => {
+                    p.prevRoundScore = p.score;
+                    p.totalScore += p.score;
+                    p.score = 0;
+                    p.stonesLeft = 3;
+                });
+                this.gameState.round++;
+                this.gameState.stones = [];
+                this.gameState.status = 'PLAYING';
+
+                if (this.gameState.gameMode === 'ZEN') {
+                    this.buildZenTurnQueue(false); // reuse same order
+                } else {
+                    this.buildTurnQueue(false); // loser-first for Mania
+                }
+                this.gameState.leaderboard = this.getSortedLeaderboard();
+            }
+        } else {
+            this.gameState.status = 'PLAYING';
+        }
+
+        this.activeStone = { x: 200, y: 720 };
+        this.hostBroadcastState();
+
+        // Start timer for next player (if game isn't over)
+        if (this.gameState.status === 'PLAYING') {
+            this.startTurnTimer();
+        }
+    }
+
+    // ─── Deterministic Physics Engine ────────────────────────
+
     hostBroadcastThrow(playerId, color, x, y, vx, vy) {
         const throwData = { playerId, color, x, y, vx, vy };
         socket.emit('host_broadcast', { roomCode: this.currentRoom, data: { action: 'SYNC_THROW', throwData } });
@@ -180,10 +393,6 @@ class GameStore {
 
     applyDrag(x, y) {
         this.activeStone = { x, y };
-        // We do not need to notify(), saving render cycles. 
-        // Or if we want other clients to see it updating smoothly, they render from getSnapshot.
-        // Actually we probably should notify() if they are not moving their mouse to trigger their own renders,
-        // Wait, the canvas has requestAnimationFrame which polls getSnapshot() constantly! So no notify needed for canvas!
     }
 
     applyThrow(data) {
@@ -253,56 +462,102 @@ class GameStore {
 
     checkTurnEnd() {
         this.calculateScores();
-        
-        let validPlayers = this.gameState.players.filter(p => !p.isSpectator);
-        let totalStonesLeft = validPlayers.reduce((sum, p) => sum + p.stonesLeft, 0);
-        
-        if (totalStonesLeft <= 0) {
+        this.gameState.leaderboard = this.getSortedLeaderboard();
+
+        // Advance to next entry in the turn queue
+        this.gameState.turnQueueIndex++;
+
+        // In Zen mode: if the next player is different from current, clear the rink
+        if (this.gameState.gameMode === 'ZEN') {
+            const prevIdx = this.gameState.turnQueueIndex - 1;
+            const prevPlayerId = this.gameState.turnQueue[prevIdx];
+            const nextPlayerId = this.gameState.turnQueue[this.gameState.turnQueueIndex];
+            
+            if (nextPlayerId !== prevPlayerId) {
+                // Different player up next (or end of queue) — clear ALL stones
+                // First, finalize the score for the previous Zen player
+                this.gameState.stones = [];
+            }
+        }
+
+        // Check if the round is over (queue exhausted)
+        if (this.gameState.turnQueueIndex >= this.gameState.turnQueue.length) {
             if (this.gameState.round >= 3) {
                 this.gameState.status = 'GAMEOVER';
             } else {
-                this.gameState.round++;
-                this.gameState.turnIndex = 0;
+                // Save this round's score for ordering, then reset for new round
+                const validPlayers = this.gameState.players.filter(p => !p.isSpectator);
                 validPlayers.forEach(p => {
+                    p.prevRoundScore = p.score;
                     p.totalScore += p.score;
                     p.score = 0;
                     p.stonesLeft = 3;
                 });
+                this.gameState.round++;
                 this.gameState.stones = [];
                 this.gameState.status = 'PLAYING';
+
+                if (this.gameState.gameMode === 'ZEN') {
+                    this.buildZenTurnQueue(false); // same order all rounds
+                } else {
+                    // Mania: Rounds 2+: loser goes first
+                    this.buildTurnQueue(false);
+                }
+                this.gameState.leaderboard = this.getSortedLeaderboard();
             }
         } else {
-            do {
-                this.gameState.turnIndex++;
-            } while (
-                this.gameState.players[this.gameState.turnIndex % this.gameState.players.length].stonesLeft <= 0 ||
-                this.gameState.players[this.gameState.turnIndex % this.gameState.players.length].isSpectator
-            );
             this.gameState.status = 'PLAYING';
         }
 
         this.activeStone = { x: 200, y: 720 };
         this.hostBroadcastState();
+
+        // Start AFK timer for next player (if game continues)
+        if (this.gameState.status === 'PLAYING') {
+            this.startTurnTimer();
+        }
     }
 
     calculateScores() {
         const targetX = 200, targetY = 150, maxRadius = 100;
 
         // Reset all player scores to recalculate them from current stone positions
-        this.gameState.players.forEach(p => p.score = 0);
-
-        this.gameState.stones.forEach(s => {
-            let dist = Math.hypot(s.x - targetX, s.y - targetY);
-            if (dist <= maxRadius) {
-                let points = Math.floor(maxRadius - dist);
-                let player = this.gameState.players.find(p => p.id === s.playerId);
-                if(player) {
-                    player.score += points;
+        // For Zen mode, we accumulate within the round since stones get cleared between players
+        if (this.gameState.gameMode === 'ZEN') {
+            // In Zen mode, score each player's stones independently
+            // We need to ADD to existing score, not reset, because stones are cleared between players
+            // But we only have the current player's stones on the rink
+            const currentStones = this.gameState.stones;
+            currentStones.forEach(s => {
+                let dist = Math.hypot(s.x - targetX, s.y - targetY);
+                if (dist <= maxRadius && !s.counted) {
+                    let points = Math.floor(maxRadius - dist);
+                    let player = this.gameState.players.find(p => p.id === s.playerId);
+                    if (player) {
+                        player.score += points;
+                    }
+                    s.counted = true;
                 }
-            }
-        });
-        
-        this.gameState.players.sort((a, b) => (b.totalScore + b.score) - (a.totalScore + a.score));
+            });
+        } else {
+            // Mania: recalculate all scores from all stones on the rink
+            this.gameState.players.forEach(p => p.score = 0);
+            this.gameState.stones.forEach(s => {
+                let dist = Math.hypot(s.x - targetX, s.y - targetY);
+                if (dist <= maxRadius) {
+                    let points = Math.floor(maxRadius - dist);
+                    let player = this.gameState.players.find(p => p.id === s.playerId);
+                    if(player) {
+                        player.score += points;
+                    }
+                }
+            });
+        }
+    }
+
+    /** Returns a sorted copy of players for leaderboard display (does not mutate the source). */
+    getSortedLeaderboard() {
+        return [...this.gameState.players].sort((a, b) => (b.totalScore + b.score) - (a.totalScore + a.score));
     }
 
     hostBroadcastState() {
@@ -333,7 +588,6 @@ class GameStore {
         if (dist <= 30) {
             this.isGrabbing = true;
             this.mouseHistory = [{ x: pos.x, y: pos.y, time: Date.now() }];
-            // Do NOT notify() 60fps, let canvas pull directly via getSnapshot()
         }
     }
 
@@ -398,6 +652,7 @@ class GameStore {
 
         const currentPlayer = this.getActivePlayer();
         if (this.isHost) {
+            this.clearTurnTimer(); // Stone thrown, cancel AFK timer
             currentPlayer.stonesLeft--;
             this.gameState.status = 'MOVING';
             const throwX = this.activeStone.x;

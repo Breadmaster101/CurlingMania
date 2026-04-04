@@ -24,11 +24,11 @@ export default function ConnectScreen() {
 
          <div className="input-group">
             <label>Player Name</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Enter your name..." maxLength={12} />
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="Enter your name..." maxLength={24} />
          </div>
          <div className="input-group">
             <label>Room Code (To Join)</label>
-            <input value={room} onChange={e => setRoom(e.target.value)} placeholder="Enter room code..." maxLength={6} />
+            <input value={room} onChange={e => setRoom(e.target.value.toUpperCase())} placeholder="Enter room code..." maxLength={3} autoCapitalize="characters" />
          </div>
 
          <button className="btn btn-accent" onClick={handleJoin}>
