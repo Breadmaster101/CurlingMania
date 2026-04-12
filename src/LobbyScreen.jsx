@@ -10,14 +10,14 @@ const GAMEMODES = [
         name: 'Mania',
         icon: Swords,
         description: 'All players share one rink. Knock opponents\' stones away and fight for the best position!',
-        gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
+        gradient: 'linear-gradient(135deg, #e11d48 0%, #9f1239 100%)',
     },
     {
         id: 'ZEN',
         name: 'Zen',
         icon: Sparkles,
         description: 'Each player gets their own rink. Throw 3 stones solo, then pass it on. Pure precision!',
-        gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+        gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
     },
 ];
 

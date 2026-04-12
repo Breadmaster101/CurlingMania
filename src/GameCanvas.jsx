@@ -39,11 +39,11 @@ export default function GameCanvas() {
         window.addEventListener('touchend', onEnd);
 
         const drawStone = (x, y, color) => {
-            ctx.beginPath(); ctx.arc(x + 3, y + 3, 14, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2); ctx.fillStyle = '#94a3b8'; ctx.fill();
-            ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+            ctx.beginPath(); ctx.arc(x + 4, y + 4, 14, 0, Math.PI * 2); ctx.fillStyle = '#6b7280'; ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2); ctx.fillStyle = '#e5e7eb'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#1f2937'; ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
             ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - 3, y - 7, 6, 14, 3) : ctx.rect(x-3, y-7, 6, 14);
-            ctx.fillStyle = '#1e293b'; ctx.fill();
+            ctx.fillStyle = '#f8fafc'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#1f2937'; ctx.stroke();
         };
 
         const renderCanvas = () => {
@@ -53,17 +53,17 @@ export default function GameCanvas() {
             
             // House
             const targetX = 200, targetY = 150;
-            ctx.beginPath(); ctx.arc(targetX, targetY, 100, 0, Math.PI * 2); ctx.fillStyle = '#3b82f6'; ctx.fill(); 
-            ctx.beginPath(); ctx.arc(targetX, targetY, 66, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();  
-            ctx.beginPath(); ctx.arc(targetX, targetY, 33, 0, Math.PI * 2); ctx.fillStyle = '#ef4444'; ctx.fill();  
-            ctx.beginPath(); ctx.arc(targetX, targetY, 10, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();  
+            ctx.lineWidth = 2; ctx.strokeStyle = '#1f2937';
+            ctx.beginPath(); ctx.arc(targetX, targetY, 100, 0, Math.PI * 2); ctx.fillStyle = '#2563eb'; ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(targetX, targetY, 66, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(targetX, targetY, 33, 0, Math.PI * 2); ctx.fillStyle = '#dc2626'; ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(targetX, targetY, 10, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
 
             // Lines
-            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(200, 0); ctx.lineTo(200, 800); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, 150); ctx.lineTo(400, 150); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, 450); ctx.lineTo(400, 450); ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(150, 720); ctx.lineTo(250, 720); ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 450); ctx.lineTo(400, 450); ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(150, 720); ctx.lineTo(250, 720); ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 4; ctx.stroke();
 
             // Placed stones
             state.gameState.stones.forEach(s => drawStone(s.x, s.y, s.color));
@@ -78,7 +78,7 @@ export default function GameCanvas() {
                     if (currentPlayer.id === state.myId) {
                         drawStone(state.activeStone.x, state.activeStone.y, currentPlayer.color);
                         if (state.isGrabbing) {
-                            ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
+                            ctx.fillStyle = 'rgba(251, 191, 36, 0.2)'; // Neo-yellow grab highlight
                             ctx.fillRect(0, 0, 400, 450); 
                         }
                     } else {

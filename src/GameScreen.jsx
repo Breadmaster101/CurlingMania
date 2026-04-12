@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useGameStore } from './useGameStore';
 import GameCanvas from './GameCanvas';
 import { Trophy, Activity, Swords, Sparkles, AlertTriangle } from 'lucide-react';
@@ -6,6 +6,7 @@ import { Trophy, Activity, Swords, Sparkles, AlertTriangle } from 'lucide-react'
 export default function GameScreen() {
     const { gameState, myId, emojiParticles, emojiKeybinds } = useGameStore();
     const playerRowRefs = useRef({});
+    const [activeKeys, setActiveKeys] = useState(new Set());
 
     // Active player from the turn queue
     const currentPlayerId = (gameState.turnQueue && gameState.turnQueueIndex < gameState.turnQueue.length)
@@ -68,6 +69,40 @@ export default function GameScreen() {
         positionNewParticles();
     }, [emojiParticles, positionNewParticles]);
 
+    // Listen for key presses to animate the glossary UI
+    useEffect(() => {
+        if (!emojiKeybinds) return;
+        
+        const handleKeyDown = (e) => {
+            const key = e.key.toLowerCase();
+            if (emojiKeybinds[key]) {
+                setActiveKeys(prev => {
+                    const next = new Set(prev);
+                    next.add(key);
+                    return next;
+                });
+            }
+        };
+
+        const handleKeyUp = (e) => {
+            const key = e.key.toLowerCase();
+            if (emojiKeybinds[key]) {
+                setActiveKeys(prev => {
+                    const next = new Set(prev);
+                    next.delete(key);
+                    return next;
+                });
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [emojiKeybinds]);
+
     return (
         <div className="game-screen-wrapper">
             {/* AFK Warning Banner — visible to ALL players */}
@@ -79,6 +114,11 @@ export default function GameScreen() {
                     </span>
                 </div>
             )}
+            {/* Gamemode badge (Moved to float left of Game Stats via CSS) */}
+            <div className="gamemode-badge-container">
+                <GameModeIcon size={16} />
+                <span>{gameModeName}</span>
+            </div>
 
             <div className="panel panel-left">
                 <h2><Trophy size={20} /> Leaderboard</h2>
@@ -97,6 +137,19 @@ export default function GameScreen() {
                         </div>
                     ))}
                 </div>
+
+                {/* Compact Emoji keybind glossary at the bottom of the leaderboard */}
+                <div className="emoji-glossary">
+                    <div className="emoji-glossary-title">Reactions</div>
+                    <div className="emoji-glossary-content">
+                        {emojiKeybinds && Object.entries(emojiKeybinds).map(([key, emoji]) => (
+                            <div key={key} className={`emoji-glossary-item ${activeKeys.has(key) ? 'active' : ''}`}>
+                                <kbd className="emoji-key">{key.toUpperCase()}</kbd>
+                                <span className="emoji-icon">{emoji}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             <GameCanvas />
@@ -104,11 +157,7 @@ export default function GameScreen() {
             <div className="panel panel-right">
                 <h2><Activity size={20} /> Game Stats</h2>
 
-                {/* Gamemode badge */}
-                <div className="gamemode-badge">
-                    <GameModeIcon size={14} />
-                    <span>{gameModeName}</span>
-                </div>
+
 
                 <div className="turn-indicator" style={{ background: turnBg }}>
                     {turnMessage}
@@ -143,17 +192,6 @@ export default function GameScreen() {
                     ))}
                 </div>
             )}
-
-            {/* Emoji keybind glossary */}
-            <div className="emoji-glossary">
-                <div className="emoji-glossary-title">Reactions</div>
-                {emojiKeybinds && Object.entries(emojiKeybinds).map(([key, emoji]) => (
-                    <div key={key} className="emoji-glossary-item">
-                        <kbd className="emoji-key">{key.toUpperCase()}</kbd>
-                        <span className="emoji-icon">{emoji}</span>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 }
