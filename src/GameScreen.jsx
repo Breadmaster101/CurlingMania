@@ -1,9 +1,11 @@
+import { useRef, useEffect, useCallback } from 'react';
 import { useGameStore } from './useGameStore';
 import GameCanvas from './GameCanvas';
 import { Trophy, Activity, Swords, Sparkles, AlertTriangle } from 'lucide-react';
 
 export default function GameScreen() {
-    const { gameState, myId } = useGameStore();
+    const { gameState, myId, emojiParticles, emojiKeybinds } = useGameStore();
+    const playerRowRefs = useRef({});
 
     // Active player from the turn queue
     const currentPlayerId = (gameState.turnQueue && gameState.turnQueueIndex < gameState.turnQueue.length)
@@ -47,6 +49,25 @@ export default function GameScreen() {
     const GameModeIcon = isZen ? Sparkles : Swords;
     const gameModeName = isZen ? 'Zen' : 'Mania';
 
+    // Position unspawned emoji particles based on their player's leaderboard card
+    const positionNewParticles = useCallback(() => {
+        if (!emojiParticles) return;
+        for (const particle of emojiParticles) {
+            if (particle.spawned) continue;
+            const rowEl = playerRowRefs.current[particle.playerId];
+            if (rowEl) {
+                const rect = rowEl.getBoundingClientRect();
+                particle.x = rect.left + rect.width / 2;
+                particle.y = rect.top + rect.height / 2;
+                particle.spawned = true;
+            }
+        }
+    }, [emojiParticles]);
+
+    useEffect(() => {
+        positionNewParticles();
+    }, [emojiParticles, positionNewParticles]);
+
     return (
         <div className="game-screen-wrapper">
             {/* AFK Warning Banner — visible to ALL players */}
@@ -63,7 +84,11 @@ export default function GameScreen() {
                 <h2><Trophy size={20} /> Leaderboard</h2>
                 <div style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '10px' }}>
                     {displayPlayers.map(p => (
-                        <div key={p.id} className={`player-row ${p.isSpectator ? 'spectator' : ''} ${gameState.status !== 'GAMEOVER' && p.id === currentPlayerId ? 'active-turn' : ''}`}>
+                        <div
+                            key={p.id}
+                            ref={el => { playerRowRefs.current[p.id] = el; }}
+                            className={`player-row ${p.isSpectator ? 'spectator' : ''} ${gameState.status !== 'GAMEOVER' && p.id === currentPlayerId ? 'active-turn' : ''}`}
+                        >
                             <div style={{display: 'flex', alignItems: 'center'}}>
                                 <span className="color-dot" style={{background: p.color}}></span>
                                 {p.name}
@@ -98,6 +123,36 @@ export default function GameScreen() {
                     <div className="stat-label">Your Stones</div>
                     <div className="stat-value">{myPlayer && !myPlayer.isSpectator ? myPlayer.stonesLeft : 0}</div>
                 </div>
+            </div>
+
+            {/* Emoji particles layer */}
+            {emojiParticles && emojiParticles.length > 0 && (
+                <div className="emoji-particle-layer">
+                    {emojiParticles.filter(p => p.spawned).map(p => (
+                        <span
+                            key={p.id}
+                            className="emoji-particle"
+                            style={{
+                                left: `${p.x}px`,
+                                top: `${p.y}px`,
+                                fontSize: `${p.size}px`,
+                            }}
+                        >
+                            {p.emoji}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {/* Emoji keybind glossary */}
+            <div className="emoji-glossary">
+                <div className="emoji-glossary-title">Reactions</div>
+                {emojiKeybinds && Object.entries(emojiKeybinds).map(([key, emoji]) => (
+                    <div key={key} className="emoji-glossary-item">
+                        <kbd className="emoji-key">{key.toUpperCase()}</kbd>
+                        <span className="emoji-icon">{emoji}</span>
+                    </div>
+                ))}
             </div>
         </div>
     );

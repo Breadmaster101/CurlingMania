@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { store } from './store';
 import { useGameStore } from './useGameStore';
-import { Play, Swords, Sparkles } from 'lucide-react';
+import { Play, Swords, Sparkles, ListTodo } from 'lucide-react';
+import initialTodoRaw from '../todo.md?raw';
 
 const GAMEMODES = [
     {
@@ -19,10 +21,49 @@ const GAMEMODES = [
     },
 ];
 
+function parseTodoItems(raw) {
+    return raw
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.startsWith('- '))
+        .map(line => line.replace(/^- /, ''));
+}
+
+function TodoCard() {
+    const [items, setItems] = useState(() => parseTodoItems(initialTodoRaw));
+
+    useEffect(() => {
+        if (import.meta.hot) {
+            import.meta.hot.accept('../todo.md?raw', (newModule) => {
+                if (newModule) {
+                    setItems(parseTodoItems(newModule.default));
+                }
+            });
+        }
+    }, []);
+
+    if (items.length === 0) return null;
+
+    return (
+        <div className="todo-card">
+            <div className="todo-card-header">
+                <ListTodo size={14} />
+                <span>Roadmap</span>
+            </div>
+            <ul className="todo-card-list">
+                {items.map((item, i) => (
+                    <li key={i}>{item}</li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 export default function LobbyScreen() {
     const { gameState, isHost, myId, currentRoom } = useGameStore();
 
     return (
+        <>
         <div className="menu-box" style={{ maxWidth: 520 }}>
             <h1 style={{fontSize: 28}}>Room Lobby</h1>
             <p style={{marginBottom: 15}}>Code: <strong style={{color: 'var(--primary)', fontSize: 22}}>{currentRoom}</strong></p>
@@ -75,5 +116,8 @@ export default function LobbyScreen() {
                 <p style={{color: 'var(--text-muted)', fontWeight: 600}}>Waiting for host to start...</p>
             )}
         </div>
+
+        <TodoCard />
+        </>
     );
 }

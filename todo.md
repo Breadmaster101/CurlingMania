@@ -1,4 +1,4 @@
-- add emotes (emojis) and chat
-- use real physics engine
+- use physics engine library
 - make multiplyer more robust
-- overhaul the ui since it looks really vibecoded rn
+- overhaul the ui since it looks really vibecoded and generally bad
+- add a dark mode

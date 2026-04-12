@@ -4,6 +4,14 @@ const socket = io('https://quicklash-server.onrender.com');
 
 const PLAYER_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
+// Emoji keybind mapping: key -> emoji
+const EMOJI_KEYBINDS = {
+    'u': '🔥',
+    'i': '🥶',
+    'o': '🎯',
+    'p': '💀',
+};
+
 class GameStore {
     constructor() {
         this.isHost = false;
@@ -39,7 +47,22 @@ class GameStore {
         // Zen mode: remember the random order for all 3 rounds
         this.zenPlayerOrder = null;
 
+        // Emoji reaction system
+        this.emojiParticles = [];
+        this.emojiPhysicsInterval = null;
+        this.emojiIdCounter = 0;
+
         this.listeners = new Set();
+
+        // Keyboard listener for emoji keybinds
+        this._handleKeyDown = (e) => {
+            if (e.repeat) return; // Prevent spam from holding keys
+            const key = e.key.toLowerCase();
+            if (EMOJI_KEYBINDS[key] && (this.gameState.status === 'PLAYING' || this.gameState.status === 'MOVING')) {
+                this.sendEmoji(EMOJI_KEYBINDS[key]);
+            }
+        };
+        window.addEventListener('keydown', this._handleKeyDown);
 
         socket.on('connect', () => { this.myId = socket.id; this.notify(); });
         socket.on('error_msg', (msg) => { this.errorMsg = msg; this.notify(); });
@@ -73,6 +96,14 @@ class GameStore {
                 if (currentPlayer && currentPlayer.id === id) {
                     this.hostBroadcastDrag(id, data.x, data.y);
                 }
+            } else if (data.action === 'EMOJI') {
+                // Relay emoji reaction from a client to all players
+                socket.emit('host_broadcast', {
+                    roomCode: this.currentRoom,
+                    data: { action: 'SYNC_EMOJI', playerId: id, emoji: data.emoji }
+                });
+                // Also spawn locally on the host
+                this.spawnEmojiParticle(id, data.emoji);
             }
         });
 
@@ -85,6 +116,11 @@ class GameStore {
             } else if (payload.action === 'SYNC_DRAG') {
                 if (payload.playerId !== this.myId) {
                     this.applyDrag(payload.x, payload.y);
+                }
+            } else if (payload.action === 'SYNC_EMOJI') {
+                // Another player sent an emoji — spawn it locally
+                if (payload.playerId !== this.myId) {
+                    this.spawnEmojiParticle(payload.playerId, payload.emoji);
                 }
             }
         });
@@ -110,7 +146,9 @@ class GameStore {
             errorMsg: this.errorMsg,
             gameState: this.gameState, // By ref is fine
             activeStone: this.activeStone,
-            isGrabbing: this.isGrabbing
+            isGrabbing: this.isGrabbing,
+            emojiParticles: this.emojiParticles,
+            emojiKeybinds: EMOJI_KEYBINDS,
         };
     }
 
@@ -668,6 +706,77 @@ class GameStore {
             this.gameState.status = 'MOVING';
             this.notify();
         }
+    }
+
+    // ─── Emoji Reaction System ────────────────────────────
+
+    sendEmoji(emoji) {
+        // Spawn locally
+        this.spawnEmojiParticle(this.myId, emoji);
+
+        // Broadcast to others via the host relay
+        if (this.isHost) {
+            socket.emit('host_broadcast', {
+                roomCode: this.currentRoom,
+                data: { action: 'SYNC_EMOJI', playerId: this.myId, emoji }
+            });
+        } else {
+            socket.emit('client_send', {
+                roomCode: this.currentRoom,
+                data: { action: 'EMOJI', emoji }
+            });
+        }
+    }
+
+    spawnEmojiParticle(playerId, emoji) {
+        const particle = {
+            id: this.emojiIdCounter++,
+            playerId,
+            emoji,
+            // x/y will be set by the renderer based on the leaderboard card position
+            // We store a relative offset; the renderer resolves the absolute position
+            x: 0,
+            y: 0,
+            vx: (Math.random() - 0.5) * 60,  // slight random horizontal scatter
+            vy: -(Math.random() * 80 + 40),   // initial upward pop
+            opacity: 1,
+            size: 28,
+            spawned: false, // will be positioned by the renderer on first frame
+        };
+        this.emojiParticles.push(particle);
+
+        // Start physics loop if not already running
+        if (!this.emojiPhysicsInterval) {
+            this.emojiPhysicsInterval = setInterval(() => this.updateEmojiPhysics(), 1000 / 60);
+        }
+        this.notify();
+    }
+
+    updateEmojiPhysics() {
+        const gravity = 980; // pixels/s² (realistic gravity feel)
+        const dt = 1 / 60;
+
+        for (const p of this.emojiParticles) {
+            if (!p.spawned) continue; // skip until renderer positions it
+            p.vy += gravity * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+        }
+
+        // Remove particles that have fallen off the bottom of the screen
+        const screenHeight = window.innerHeight;
+        this.emojiParticles = this.emojiParticles.filter(p => {
+            if (!p.spawned) return true; // keep unpositioned ones
+            return p.y < screenHeight + 50;
+        });
+
+        // Stop interval if no particles left
+        if (this.emojiParticles.length === 0 && this.emojiPhysicsInterval) {
+            clearInterval(this.emojiPhysicsInterval);
+            this.emojiPhysicsInterval = null;
+        }
+
+        this.notify();
     }
 }
 
