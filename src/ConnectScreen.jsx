@@ -38,6 +38,9 @@ export default function ConnectScreen() {
          <button className="btn" onClick={handleCreate}>
             <Gamepad2 size={20} /> Create New Game
          </button>
+         <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600, marginTop: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Created by E-Money
+         </div>
 
          {errorMsg && <p style={{ color: '#e11d48', marginTop: 15, fontWeight: 'bold' }}>{errorMsg}</p>}
       </div>
