@@ -38,7 +38,7 @@ export default function ConnectScreen() {
          <button className="btn" onClick={handleCreate}>
             <Gamepad2 size={20} /> Create New Game
          </button>
-         <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600, marginTop: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+         <div style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600, marginTop: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
             Created by E-Money aka Mindfreak from San Marteo.🦟
          </div>
 
