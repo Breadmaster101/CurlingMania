@@ -1,2 +1,3 @@
 - use a physics engine library
 - make the multiplyer system more robust
+- reverse order of who goes when in mania mode
