@@ -1,4 +1,2 @@
-- use physics engine library
-- make multiplyer more robust
-- overhaul the ui since it looks really vibecoded and generally bad
-- add a dark mode
+- use a physics engine library
+- make the multiplyer system more robust
