@@ -4,3 +4,4 @@
 - fix spectators not become real players once the game is over
 - auto kick players who have been inactive for 2 minutes
 - replace fire emoji with the swearing face emoji
+- fix minor ui bugs
