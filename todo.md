@@ -5,3 +5,4 @@
 - auto kick players who have been inactive for 2 minutes
 - replace fire emoji with the swearing face emoji
 - fix minor ui bugs
+- add return to main menu button
