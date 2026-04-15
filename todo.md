@@ -7,3 +7,4 @@
 - fix minor ui bugs
 - add return to main menu button
 - add 2 more emojis (pray and sob) so that theres a total of 6
+- optimize emojis since it lags when theres a lot
