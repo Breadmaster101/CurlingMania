@@ -6,7 +6,7 @@ const PLAYER_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#
 
 // Emoji keybind mapping: key -> emoji
 const EMOJI_KEYBINDS = {
-    'u': '🔥',
+    'u': '🤬',
     'i': '🥶',
     'o': '🎯',
     'p': '💀',
