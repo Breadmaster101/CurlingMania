@@ -232,8 +232,8 @@ class GameStore {
                 [validPlayers[i], validPlayers[j]] = [validPlayers[j], validPlayers[i]];
             }
         } else {
-            // Loser-first: sort ascending by previous round score (lowest score goes first)
-            validPlayers.sort((a, b) => a.prevRoundScore - b.prevRoundScore);
+            // Winner-first: sort descending by previous round score (highest score goes first, loser goes last with the hammer)
+            validPlayers.sort((a, b) => b.prevRoundScore - a.prevRoundScore);
         }
 
         // Build round-robin queue: cycle through players, 1 stone each, for stonesLeft rounds
