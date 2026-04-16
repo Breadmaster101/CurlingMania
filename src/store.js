@@ -9,7 +9,9 @@ const EMOJI_KEYBINDS = {
     'u': '🤬',
     'i': '🥶',
     'o': '🎯',
-    'p': '💀',
+    'j': '🙏',
+    'k': '😭',
+    'l': '💀',
 };
 
 class GameStore {

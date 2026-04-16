@@ -122,7 +122,7 @@ export default function GameScreen() {
 
             <div className="panel panel-left">
                 <h2><Trophy size={20} /> Leaderboard</h2>
-                <div style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '10px' }}>
+                <div style={{ flexGrow: 1, overflowY: 'auto', padding: '10px 14px 10px 10px' }}>
                     {displayPlayers.map(p => (
                         <div
                             key={p.id}
