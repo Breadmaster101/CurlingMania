@@ -8,3 +8,4 @@
 - add return to main menu button, is "back" when in lobby and "quit" when in game
 - add 2 more emojis (pray and sob) so that theres a total of 6, rebind emoji keybinds to UIO for top row and JKL for bottom row
 - optimize emojis since it lags when theres a lot
+- add sound
