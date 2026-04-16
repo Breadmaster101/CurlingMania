@@ -48,7 +48,7 @@ function TodoCard() {
         <div className="todo-card">
             <div className="todo-card-header">
                 <ListTodo size={14} />
-                <span>Roadmap</span>
+                <span>Roadmap aka E-Money's To-Do List</span>
             </div>
             <ul className="todo-card-list">
                 {items.map((item, i) => (
