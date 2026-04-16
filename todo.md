@@ -1,4 +1,4 @@
-- use a physics engine library
+- use a physics engine library (if this doesnt end up happening just make the stones rotate)
 - make the multiplyer system more robust
 - reverse order of who goes when in mania mode
 - fix spectators not become real players once the game is over
