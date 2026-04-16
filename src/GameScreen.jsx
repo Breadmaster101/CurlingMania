@@ -159,7 +159,7 @@ export default function GameScreen() {
 
 
 
-                <div className="turn-indicator" style={{ background: turnBg }}>
+                <div className={`turn-indicator ${currentPlayerId === myId ? 'wiggle-turn' : ''}`} style={{ background: turnBg }}>
                     {turnMessage}
                 </div>
                 

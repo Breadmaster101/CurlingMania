@@ -354,8 +354,11 @@ input:focus {
   color: #000;
   border: var(--border-width) solid var(--border-color);
   box-shadow: 6px 6px 0 var(--shadow-color);
-  animation: shakeAlert 4s infinite;
   text-transform: uppercase;
+}
+
+.turn-indicator.wiggle-turn {
+  animation: shakeAlert 4s infinite;
 }
 
 @keyframes shakeAlert {
