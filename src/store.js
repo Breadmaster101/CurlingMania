@@ -585,21 +585,27 @@ class GameStore {
         const targetX = 200, targetY = 150, maxRadius = 100;
 
         // Reset all player scores to recalculate them from current stone positions
-        // For Zen mode, we accumulate within the round since stones get cleared between players
         if (this.gameState.gameMode === 'ZEN') {
-            // In Zen mode, score each player's stones independently
-            // We need to ADD to existing score, not reset, because stones are cleared between players
-            // But we only have the current player's stones on the rink
-            const currentStones = this.gameState.stones;
-            currentStones.forEach(s => {
+            // Find all players who currently have stones on the rink
+            const playersWithStones = new Set(this.gameState.stones.map(s => s.playerId));
+            
+            // Reset only their scores
+            playersWithStones.forEach(playerId => {
+                const player = this.gameState.players.find(p => p.id === playerId);
+                if (player) {
+                    player.score = 0;
+                }
+            });
+
+            // Recalculate based on current stone positions
+            this.gameState.stones.forEach(s => {
                 let dist = Math.hypot(s.x - targetX, s.y - targetY);
-                if (dist <= maxRadius && !s.counted) {
+                if (dist <= maxRadius) {
                     let points = Math.floor(maxRadius - dist);
                     let player = this.gameState.players.find(p => p.id === s.playerId);
                     if (player) {
                         player.score += points;
                     }
-                    s.counted = true;
                 }
             });
         } else {

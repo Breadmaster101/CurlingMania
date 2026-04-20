@@ -5,4 +5,3 @@
 - add return to main menu button, is "back" when in lobby and "quit" when in game
 - optimize emojis since it lags when theres a lot
 - add sound
-- fix score not correcting when puck is bounced out in zen mode
