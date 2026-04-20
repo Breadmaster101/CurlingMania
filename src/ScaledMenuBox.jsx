@@ -43,6 +43,14 @@ export default function ScaledMenuBox({ children, className = '', style = {} }) 
     recalc();
 
     window.addEventListener('resize', debouncedRecalc);
+    
+    // Fallback font metrics (system-ui) might differ from 'Space Grotesk', causing the 
+    // initial recalc to use slightly larger/smaller natural dimensions. When the font
+    // finishes loading asynchronously, it doesn't trigger the MutationObserver.
+    // Triggering recalc on font load fixes the first-click resize jump.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(debouncedRecalc);
+    }
 
     // Watch for content changes (players joining lobby, errors appearing, etc.)
     const mo = new MutationObserver(debouncedRecalc);
