@@ -52,7 +52,7 @@
 
 body, html, #root {
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   color: var(--text-main);
   background-color: var(--bg-color);
@@ -291,7 +291,7 @@ input:focus {
 /* ─── GAME UI (Neo-Brutalist Panel) ──────────────────────────── */
 .game-screen-wrapper {
   position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
+  top: 0; left: 0; width: 100vw; height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -422,7 +422,7 @@ input:focus {
 .canvas-container {
   position: absolute;
   top: 0; left: 0;
-  width: 100vw; height: 100vh;
+  width: 100vw; height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -430,7 +430,7 @@ input:focus {
 }
 
 canvas {
-  height: 100vh;
+  height: 100dvh;
   max-width: 100vw;
   aspect-ratio: 1 / 2;
   background-color: var(--ice-bg);
@@ -588,7 +588,7 @@ canvas:active { cursor: grabbing; }
 /* ─── Emoji Particle Layer ───────────────────────────── */
 .emoji-particle-layer {
   position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
+  top: 0; left: 0; width: 100vw; height: 100dvh;
   pointer-events: none; z-index: 500; overflow: hidden;
 }
 
@@ -690,7 +690,7 @@ canvas:active { cursor: grabbing; }
   border: var(--border-width) solid var(--border-color);
   padding: 24px;
   width: 320px;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100dvh - 160px);
   overflow-y: auto;
   box-shadow: 12px 12px 0 var(--shadow-color);
   transform: rotate(-2deg);
@@ -1024,7 +1024,7 @@ canvas:active { cursor: grabbing; }
     padding: 16px;
     bottom: 20px;
     right: 20px;
-    max-height: calc(100vh - 120px);
+    max-height: calc(100dvh - 120px);
     box-shadow: 8px 8px 0 var(--shadow-color);
   }
 
@@ -1077,7 +1077,7 @@ canvas:active { cursor: grabbing; }
   /* Adjust canvas for mobile: full screen with top HUD space only */
   .canvas-container {
     top: 60px;
-    height: calc(100vh - 60px); /* top HUD only, emoji bar is now floating */
+    height: calc(100dvh - 60px); /* top HUD only, emoji bar is now floating */
   }
 
   canvas {
