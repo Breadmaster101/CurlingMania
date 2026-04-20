@@ -81,9 +81,9 @@ export default function GameScreen() {
                 particle.y = rect.top + rect.height / 2;
                 particle.spawned = true;
             } else if (isMobile) {
-                // On mobile, panels may be hidden. Spawn near top-center.
-                particle.x = window.innerWidth / 2;
-                particle.y = 80;
+                // On mobile, panels may be hidden. Spawn under the round indicator.
+                particle.x = 35;
+                particle.y = 60;
                 particle.spawned = true;
             }
         }
@@ -156,7 +156,7 @@ export default function GameScreen() {
                             {turnMessage}
                         </div>
                         <div className="mobile-hud-stat">
-                            <span className="mobile-hud-stat-label">🪨</span>
+                            <span className="mobile-hud-stat-label">S</span>
                             <span className="mobile-hud-stat-value">{myPlayer && !myPlayer.isSpectator ? myPlayer.stonesLeft : 0}</span>
                         </div>
                         <div className="mobile-hud-btn" onClick={() => setDrawerOpen(true)}>
