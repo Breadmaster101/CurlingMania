@@ -67,7 +67,18 @@ class GameStore {
         window.addEventListener('keydown', this._handleKeyDown);
 
         socket.on('connect', () => { this.myId = socket.id; this.notify(); });
-        socket.on('error_msg', (msg) => { this.errorMsg = msg; this.notify(); });
+        socket.on('error_msg', (msg) => {
+            if (this._joinTimeout) {
+                clearTimeout(this._joinTimeout);
+                this._joinTimeout = null;
+            }
+            this.errorMsg = msg;
+            // If we were waiting to join, reset back to connect screen
+            if (this.gameState.status === 'CONNECT') {
+                this.currentRoom = '';
+            }
+            this.notify();
+        });
         
         // Host Network
         socket.on('player_joined', (data) => {
@@ -180,9 +191,21 @@ class GameStore {
     joinRoom(name, room) {
         this.myName = name;
         this.currentRoom = room;
-        socket.emit('join_room', { roomCode: this.currentRoom, name: this.myName });
-        this.gameState.status = 'LOBBY';
         this.errorMsg = '';
+        // Don't move to LOBBY yet — wait for the host to broadcast SYNC_STATE.
+        // If the room is invalid, the server will emit 'error_msg' and we stay on CONNECT.
+        socket.emit('join_room', { roomCode: this.currentRoom, name: this.myName });
+
+        // Timeout: if we're still on CONNECT after 5s, the room likely doesn't exist
+        if (this._joinTimeout) clearTimeout(this._joinTimeout);
+        this._joinTimeout = setTimeout(() => {
+            if (this.gameState.status === 'CONNECT') {
+                this.errorMsg = 'Room not found. Check the code and try again.';
+                this.currentRoom = '';
+                this.notify();
+            }
+        }, 5000);
+
         this.notify();
     }
 
@@ -606,6 +629,11 @@ class GameStore {
     }
 
     applyGameState(newState) {
+        // Clear join timeout — we got a valid state from the host
+        if (this._joinTimeout) {
+            clearTimeout(this._joinTimeout);
+            this._joinTimeout = null;
+        }
         const oldStatus = this.gameState.status;
         this.gameState = newState;
         

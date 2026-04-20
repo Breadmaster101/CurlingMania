@@ -150,6 +150,41 @@ input:focus {
   box-shadow: 2px 2px 0 var(--shadow-color);
 }
 
+/* ─── Join Error Banner ────────────────────────────────── */
+.join-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 2px solid var(--accent);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  animation: shakeIn 0.3s ease;
+  text-align: left;
+}
+
+@keyframes shakeIn {
+  0% { transform: translateX(-8px); opacity: 0; }
+  25% { transform: translateX(6px); }
+  50% { transform: translateX(-4px); }
+  75% { transform: translateX(2px); }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Spinner for Joining state */
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ─── Chunky Buttons (The Juice) ───────────────────────── */
 .btn {
   width: 100%;
@@ -180,6 +215,13 @@ input:focus {
 .btn:active {
   transform: translate(6px, 6px);
   box-shadow: 0px 0px 0 var(--shadow-color);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 4px 4px 0 var(--shadow-color);
 }
 
 .btn-accent {
@@ -648,6 +690,8 @@ canvas:active { cursor: grabbing; }
   border: var(--border-width) solid var(--border-color);
   padding: 24px;
   width: 320px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
   box-shadow: 12px 12px 0 var(--shadow-color);
   transform: rotate(-2deg);
   transition: transform 0.2s;
@@ -852,37 +896,40 @@ canvas:active { cursor: grabbing; }
   box-shadow: 0 0 0 var(--shadow-color);
 }
 
-/* ─── Mobile Emoji Tap Bar ─────────────────────────────── */
+/* ─── Mobile Emoji Tap Bar (floating vertical) ────────── */
 .mobile-emoji-bar {
   display: none; /* hidden on desktop */
 }
 
 .mobile-emoji-bar.show {
   display: flex;
+  flex-direction: column;
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 100;
-  background: var(--panel-bg);
-  border-top: var(--border-width) solid var(--border-color);
-  box-shadow: 0 -4px 0 var(--shadow-color);
-  padding: 8px;
+  background: transparent;
+  padding: 0;
   gap: 6px;
-  justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
 .mobile-emoji-btn {
-  width: 44px;
-  height: 44px;
-  background: #f3f4f6;
+  width: 40px;
+  height: 40px;
+  background: rgba(243, 244, 246, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   border: 2px solid var(--border-color);
   box-shadow: 3px 3px 0 var(--shadow-color);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 22px;
+  font-size: 20px;
   transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+  border-radius: 4px;
 }
 
 .mobile-emoji-btn:active {
@@ -977,6 +1024,7 @@ canvas:active { cursor: grabbing; }
     padding: 16px;
     bottom: 20px;
     right: 20px;
+    max-height: calc(100vh - 120px);
     box-shadow: 8px 8px 0 var(--shadow-color);
   }
 
@@ -1026,10 +1074,10 @@ canvas:active { cursor: grabbing; }
     display: none; /* default hidden, .show class added by JS */
   }
 
-  /* Adjust canvas for mobile: full screen with top/bottom HUD space */
+  /* Adjust canvas for mobile: full screen with top HUD space only */
   .canvas-container {
     top: 60px;
-    height: calc(100vh - 60px - 60px); /* top HUD + bottom emoji bar */
+    height: calc(100vh - 60px); /* top HUD only, emoji bar is now floating */
   }
 
   canvas {
@@ -1071,8 +1119,8 @@ canvas:active { cursor: grabbing; }
   }
 
   .mobile-emoji-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 18px;
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
   }
 }

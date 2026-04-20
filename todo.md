@@ -6,4 +6,3 @@
 - optimize emojis since it lags when theres a lot
 - add sound
 - fix score not correcting when puck is bounced out in zen mode
-- add warning if room code to join is invalid instead of joining empty room
