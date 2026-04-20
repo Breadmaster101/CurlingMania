@@ -75,19 +75,29 @@ export default function GameScreen() {
         for (const particle of emojiParticles) {
             if (particle.spawned) continue;
             const rowEl = playerRowRefs.current[particle.playerId];
-            if (rowEl) {
+            if (isMobile && !drawerOpen) {
+                // On mobile if drawer is closed, spawn under the round indicator.
+                particle.x = 30;
+                particle.y = 68;
+                particle.spawned = true;
+            } else if (rowEl) {
                 const rect = rowEl.getBoundingClientRect();
-                particle.x = rect.left + rect.width / 2;
-                particle.y = rect.top + rect.height / 2;
+                // Check if element is actually visible
+                if (rect.width > 0 || rect.height > 0) {
+                    particle.x = rect.left + rect.width / 2;
+                    particle.y = rect.top + rect.height / 2;
+                } else {
+                    particle.x = 30;
+                    particle.y = 68;
+                }
                 particle.spawned = true;
             } else if (isMobile) {
-                // On mobile, panels may be hidden. Spawn under the round indicator.
-                particle.x = 35;
-                particle.y = 60;
+                particle.x = 30;
+                particle.y = 68;
                 particle.spawned = true;
             }
         }
-    }, [emojiParticles, isMobile]);
+    }, [emojiParticles, isMobile, drawerOpen]);
 
     useEffect(() => {
         positionNewParticles();

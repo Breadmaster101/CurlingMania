@@ -788,6 +788,7 @@ canvas:active { cursor: grabbing; }
   border: 2px solid var(--border-color);
   box-shadow: 2px 2px 0 var(--shadow-color);
   min-width: 50px;
+  flex-shrink: 0;
 }
 
 .mobile-hud-stat-label {
@@ -1083,8 +1084,8 @@ canvas:active { cursor: grabbing; }
 
   /* Adjust canvas for mobile: full screen with top HUD space only */
   .canvas-container {
-    top: 60px;
-    height: calc(100dvh - 60px); /* top HUD only, emoji bar is now floating */
+    top: 52px;
+    height: calc(100dvh - 52px); /* top HUD only, emoji bar is now floating */
   }
 
   canvas {
@@ -1111,9 +1112,8 @@ canvas:active { cursor: grabbing; }
     font-size: 11px;
     padding: 0 8px;
     height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    line-height: 30px;
+    display: block;
   }
 
   .mobile-hud-stat {
