@@ -180,7 +180,7 @@ export default function GameScreen() {
                                 <X size={14} />
                             </div>
                         </h2>
-                        <div style={{ flexGrow: 1, overflowY: 'auto' }}>
+                        <div style={{ flexGrow: 1, overflowY: 'auto', padding: '4px 12px 12px 4px' }}>
                             {displayPlayers.map(p => (
                                 <div
                                     key={p.id}
