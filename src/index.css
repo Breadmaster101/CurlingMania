@@ -77,8 +77,6 @@ body, html, #root {
   text-align: center;
   width: 100%;
   max-width: 480px;
-  max-height: calc(100vh - var(--float-gap) * 2);
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -972,47 +970,8 @@ canvas:active { cursor: grabbing; }
   }
 }
 
-/* ─── Narrow screens (≤ 700px wide) — scale down width ─ */
+/* ─── Narrow screens: todo card adjustments ───────────── */
 @media (max-width: 700px) {
-  .menu-box {
-    padding: 24px;
-    max-width: calc(100vw - var(--float-gap) * 2);
-    max-height: calc(100vh - var(--float-gap) * 2);
-  }
-
-  .menu-box-wide {
-    max-width: calc(100vw - var(--float-gap) * 2);
-  }
-
-  .gamemode-card {
-    padding: 16px 10px;
-    box-shadow: 4px 4px 0 var(--shadow-color);
-  }
-
-  .gamemode-card-icon {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto 10px;
-    box-shadow: 3px 3px 0 var(--shadow-color);
-  }
-
-  .gamemode-card-name {
-    font-size: 16px;
-    margin-bottom: 4px;
-  }
-
-  .gamemode-card-desc {
-    font-size: 12px;
-  }
-
-  .gamemode-card-check {
-    width: 26px;
-    height: 26px;
-    font-size: 14px;
-    top: -8px;
-    right: -8px;
-  }
-
   .todo-card {
     width: 260px;
     padding: 16px;
@@ -1043,194 +1002,8 @@ canvas:active { cursor: grabbing; }
   }
 }
 
-/* ─── Short or narrow screens — compact sizing (height/spacing only) ─ */
-@media (max-width: 700px), (max-height: 700px) {
-  .menu-box {
-    padding: 24px;
-    max-height: calc(100vh - var(--float-gap) * 2);
-  }
-
-  .menu-box h1 {
-    font-size: 32px;
-    letter-spacing: -1px;
-    text-shadow: 2px 2px 0 var(--secondary);
-  }
-
-  .menu-box p {
-    font-size: 15px;
-    margin-bottom: 20px;
-  }
-
-  .input-group {
-    margin-bottom: 16px;
-  }
-
-  .input-group label {
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
-
-  input {
-    padding: 12px 14px;
-    font-size: 16px;
-    box-shadow: 3px 3px 0 var(--shadow-color);
-  }
-
-  .btn {
-    padding: 14px;
-    font-size: 16px;
-    margin-bottom: 12px;
-    gap: 8px;
-    box-shadow: 4px 4px 0 var(--shadow-color);
-  }
-
-  .player-list-box {
-    padding: 10px;
-    margin-bottom: 16px;
-    max-height: 180px;
-  }
-
-  .player-list-item {
-    padding: 10px 12px;
-    font-size: 14px;
-    margin-bottom: 6px;
-    box-shadow: 2px 2px 0 var(--shadow-color);
-  }
-
-  .gamemode-cards {
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .color-dot {
-    width: 14px;
-    height: 14px;
-    margin-right: 10px;
-    border-width: 2px;
-    box-shadow: 1px 1px 0 var(--shadow-color);
-  }
-}
-
-/* ─── Very short screens (e.g. landscape laptop with small height) ── */
-@media (max-height: 600px) {
-  .menu-box {
-    padding: 16px 20px;
-  }
-
-  .menu-box h1 {
-    font-size: 26px;
-    margin-bottom: 4px;
-  }
-
-  .menu-box p {
-    font-size: 14px;
-    margin-bottom: 12px;
-  }
-
-  .input-group {
-    margin-bottom: 10px;
-  }
-
-  input {
-    padding: 10px 12px;
-    font-size: 15px;
-  }
-
-  .btn {
-    padding: 12px;
-    font-size: 15px;
-    margin-bottom: 8px;
-  }
-
-  .player-list-box {
-    max-height: 120px;
-    padding: 8px;
-    margin-bottom: 10px;
-  }
-
-  .player-list-item {
-    padding: 8px 10px;
-    font-size: 13px;
-  }
-
-  .gamemode-card {
-    padding: 12px 8px;
-  }
-
-  .gamemode-card-icon {
-    width: 32px;
-    height: 32px;
-    margin-bottom: 6px;
-  }
-
-  .gamemode-card-name {
-    font-size: 14px;
-  }
-
-  .gamemode-card-desc {
-    font-size: 11px;
-  }
-}
-
 /* ─── Mobile (≤ 640px) ─────────────────────────────────── */
 @media (max-width: 640px) {
-  body, html, #root {
-    overflow-y: auto;
-    height: 100%;
-    min-height: 100vh;
-    /* Prevent overscroll/bounce on iOS */
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .menu-box {
-    padding: 20px;
-    max-width: calc(100vw - var(--float-gap) * 2);
-    max-height: calc(100vh - var(--float-gap) * 2);
-    box-shadow: 4px 4px 0 var(--shadow-color);
-  }
-
-  .menu-box h1 {
-    font-size: 28px;
-  }
-
-  .gamemode-cards {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .gamemode-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    text-align: left;
-  }
-
-  .gamemode-card-icon {
-    margin: 0;
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-  }
-
-  .gamemode-card-name {
-    font-size: 15px;
-    margin-bottom: 2px;
-  }
-
-  .gamemode-card-desc {
-    font-size: 11px;
-  }
-
-  .gamemode-card-check {
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    top: -6px;
-    right: -6px;
-  }
-
   /* Hide todo card on mobile */
   .todo-card {
     display: none;
@@ -1272,38 +1045,8 @@ canvas:active { cursor: grabbing; }
     box-shadow: 4px 4px 0 var(--shadow-color);
     max-width: 90vw;
   }
-}
 
-/* ─── Very small mobile (≤ 380px) ──────────────────────── */
-@media (max-width: 380px) {
-  .menu-box {
-    padding: 16px;
-    --float-gap: 40px;
-    max-width: calc(100vw - 80px);
-    max-height: calc(100vh - 80px);
-  }
-
-  .menu-box h1 {
-    font-size: 24px;
-    text-shadow: 2px 2px 0 var(--secondary);
-  }
-
-  .menu-box p {
-    font-size: 13px;
-    margin-bottom: 14px;
-  }
-
-  .btn {
-    padding: 12px;
-    font-size: 14px;
-    gap: 6px;
-  }
-
-  input {
-    padding: 10px 12px;
-    font-size: 15px;
-  }
-
+  /* Mobile HUD bar adjustments */
   .mobile-hud-bar {
     padding: 6px 8px;
     gap: 4px;

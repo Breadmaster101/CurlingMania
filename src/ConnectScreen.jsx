@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { store } from './store';
 import { Gamepad2, ArrowRight } from 'lucide-react';
 import { useGameStore } from './useGameStore';
+import ScaledMenuBox from './ScaledMenuBox';
 
 export default function ConnectScreen() {
    const [name, setName] = useState('');
@@ -18,7 +19,7 @@ export default function ConnectScreen() {
    }
 
    return (
-      <div className="menu-box">
+      <ScaledMenuBox>
          <h1>CurlingMania</h1>
          <p>Grab, Drag, and Release!</p>
 
@@ -43,6 +44,6 @@ export default function ConnectScreen() {
          </div>
 
          {errorMsg && <p style={{ color: '#e11d48', marginTop: 15, fontWeight: 'bold' }}>{errorMsg}</p>}
-      </div>
+      </ScaledMenuBox>
    );
 }

@@ -1,6 +1,7 @@
 import { useGameStore } from './useGameStore';
 import { store } from './store';
 import { Trophy, Home } from 'lucide-react';
+import ScaledMenuBox from './ScaledMenuBox';
 
 export default function GameOverScreen() {
     const { gameState, myId, isHost } = useGameStore();
@@ -10,7 +11,7 @@ export default function GameOverScreen() {
     const winner = sortedPlayers.length > 0 ? sortedPlayers[0] : null;
 
     return (
-        <div className="menu-box">
+        <ScaledMenuBox>
             <h1 style={{ fontSize: 32, textAlign: 'center', marginBottom: '5px' }}>
                 <Trophy size={36} style={{ verticalAlign: 'middle', marginRight: '10px', color: '#f59e0b' }} />
                 Game Over!
@@ -50,6 +51,6 @@ export default function GameOverScreen() {
                     As the host, returning to the lobby will bring everyone with you.
                 </p>
             )}
-        </div>
+        </ScaledMenuBox>
     );
 }

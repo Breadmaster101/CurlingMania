@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { store } from './store';
 import { useGameStore } from './useGameStore';
 import { Play, Swords, Sparkles, ListTodo } from 'lucide-react';
+import ScaledMenuBox from './ScaledMenuBox';
 import initialTodoRaw from '../todo.md?raw';
 
 const GAMEMODES = [
@@ -64,7 +65,7 @@ export default function LobbyScreen() {
 
     return (
         <>
-        <div className="menu-box menu-box-wide">
+        <ScaledMenuBox className="menu-box-wide">
             <h1 style={{fontSize: 28}}>Room Lobby</h1>
             <p style={{marginBottom: 15}}>Code: <strong style={{color: 'var(--primary)', fontSize: 22}}>{currentRoom}</strong></p>
 
@@ -115,7 +116,7 @@ export default function LobbyScreen() {
             ) : (
                 <p style={{color: 'var(--text-muted)', fontWeight: 600}}>Waiting for host to start...</p>
             )}
-        </div>
+        </ScaledMenuBox>
 
         <TodoCard />
         </>
