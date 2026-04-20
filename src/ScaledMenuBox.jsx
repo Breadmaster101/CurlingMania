@@ -22,11 +22,13 @@ export default function ScaledMenuBox({ children, className = '', style = {} }) 
       // Read the current zoom so we can recover the natural (zoom=1) dimensions
       // without resetting zoom (avoids flicker).
       const currentZoom = parseFloat(el.style.zoom) || 1;
-      const rect = el.getBoundingClientRect();
-
-      // Recover unscaled natural dimensions
-      const naturalW = rect.width / currentZoom;
-      const naturalH = rect.height / currentZoom;
+      
+      // Recover unscaled natural dimensions.
+      // Use offsetWidth/offsetHeight instead of getBoundingClientRect() to avoid
+      // a Safari bug where animated children shrinking/growing (like the checkmark)
+      // artificially inflate the reported bounding rect.
+      const naturalW = el.offsetWidth / currentZoom;
+      const naturalH = el.offsetHeight / currentZoom;
 
       const availW = window.innerWidth - FLOAT_GAP * 2;
       const availH = window.innerHeight - FLOAT_GAP * 2;
