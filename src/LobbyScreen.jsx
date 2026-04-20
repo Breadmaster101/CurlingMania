@@ -64,7 +64,7 @@ export default function LobbyScreen() {
 
     return (
         <>
-        <div className="menu-box" style={{ maxWidth: 520 }}>
+        <div className="menu-box menu-box-wide">
             <h1 style={{fontSize: 28}}>Room Lobby</h1>
             <p style={{marginBottom: 15}}>Code: <strong style={{color: 'var(--primary)', fontSize: 22}}>{currentRoom}</strong></p>
 

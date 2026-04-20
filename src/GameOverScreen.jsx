@@ -10,7 +10,7 @@ export default function GameOverScreen() {
     const winner = sortedPlayers.length > 0 ? sortedPlayers[0] : null;
 
     return (
-        <div className="menu-box" style={{ width: '400px', maxWidth: '80%' }}>
+        <div className="menu-box">
             <h1 style={{ fontSize: 32, textAlign: 'center', marginBottom: '5px' }}>
                 <Trophy size={36} style={{ verticalAlign: 'middle', marginRight: '10px', color: '#f59e0b' }} />
                 Game Over!
