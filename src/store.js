@@ -316,6 +316,12 @@ class GameStore {
         this.clearTurnTimer();
         if (this.isHost) {
             this.gameState.status = 'LOBBY';
+            this.gameState.players.forEach((p, i) => {
+                if (p.isSpectator) {
+                    p.isSpectator = false;
+                    p.color = PLAYER_COLORS[i % PLAYER_COLORS.length];
+                }
+            });
             this.hostBroadcastState();
         } else {
             this.gameState.status = 'LOBBY';
@@ -644,7 +650,7 @@ class GameStore {
         this.gameState = newState;
         
         const me = this.gameState.players.find(p => p.id === this.myId);
-        if (me && me.isSpectator) this.isSpectator = true;
+        if (me) this.isSpectator = me.isSpectator;
         
         if (oldStatus === 'MOVING' && this.gameState.status === 'PLAYING') {
             this.activeStone = { x: 200, y: 720 };

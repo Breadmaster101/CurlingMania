@@ -1,6 +1,4 @@
 - use a physics engine library (if this doesnt end up happening just make the stones rotate)
-- make the multiplyer system more robust
-- fix spectators not become real players once the game is over
 - auto kick players who have been inactive for 2 minutes
 - add return to main menu button, is "back" when in lobby and "quit" when in game
 - optimize emojis since it lags when theres a lot
