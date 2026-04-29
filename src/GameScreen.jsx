@@ -4,6 +4,7 @@ import { store } from './store';
 import GameCanvas from './GameCanvas';
 import LeaveButton from './LeaveButton';
 import { Trophy, Activity, Swords, Sparkles, AlertTriangle, Menu, X } from 'lucide-react';
+import { useShiftKey } from './useShiftKey';
 
 function useIsMobile(breakpoint = 640) {
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= breakpoint);
@@ -17,11 +18,12 @@ function useIsMobile(breakpoint = 640) {
 }
 
 export default function GameScreen() {
-    const { gameState, myId, emojiParticles, emojiKeybinds } = useGameStore();
+    const { gameState, myId, emojiParticles, emojiKeybinds, isHost } = useGameStore();
     const playerRowRefs = useRef({});
     const [activeKeys, setActiveKeys] = useState(new Set());
     const [drawerOpen, setDrawerOpen] = useState(false);
     const isMobile = useIsMobile();
+    const shiftHeld = useShiftKey();
 
     // Active player from the turn queue
     const currentPlayerId = (gameState.turnQueue && gameState.turnQueueIndex < gameState.turnQueue.length)
@@ -203,7 +205,19 @@ export default function GameScreen() {
                                         <span className="color-dot" style={{background: p.color}}></span>
                                         {p.name}
                                     </div>
-                                    <div>{p.totalScore + p.score} pts</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>{p.totalScore + p.score} pts</span>
+                                        {isHost && p.id !== myId && (
+                                            <button 
+                                                className="kick-btn"
+                                                onClick={(e) => { e.stopPropagation(); store.kickPlayer(p.id); }}
+                                                title="Kick Player"
+                                                style={{ visibility: shiftHeld ? 'visible' : 'hidden' }}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -231,7 +245,9 @@ export default function GameScreen() {
                     </div>
 
                     <div className="panel panel-left">
-                        <h2><Trophy size={20} /> Leaderboard</h2>
+                        <h2>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Trophy size={20} /> Leaderboard</span>
+                        </h2>
                         <div style={{ flexGrow: 1, overflowY: 'auto', padding: '10px 14px 10px 10px' }}>
                             {displayPlayers.map(p => (
                                 <div
@@ -243,10 +259,28 @@ export default function GameScreen() {
                                         <span className="color-dot" style={{background: p.color}}></span>
                                         {p.name}
                                     </div>
-                                    <div>{p.totalScore + p.score} pts</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>{p.totalScore + p.score} pts</span>
+                                        {isHost && p.id !== myId && (
+                                            <button 
+                                                className="kick-btn"
+                                                onClick={(e) => { e.stopPropagation(); store.kickPlayer(p.id); }}
+                                                title="Kick Player"
+                                                style={{ visibility: shiftHeld ? 'visible' : 'hidden' }}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
+
+                        {isHost && gameState.players.length > 1 && (
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 12, marginTop: 4, fontWeight: 700, textTransform: 'uppercase' }}>
+                                Hold <kbd style={{ padding: '2px 4px', background: '#e2e8f0', border: '1px solid #cbd5e1', borderRadius: '4px', color: '#475569', fontSize: 10 }}>Shift</kbd> to kick players
+                            </div>
+                        )}
 
                         {/* Compact Emoji keybind glossary at the bottom of the leaderboard */}
                         <div className="emoji-glossary">

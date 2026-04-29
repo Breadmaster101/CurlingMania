@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { store } from './store';
 import { useGameStore } from './useGameStore';
-import { Play, Swords, Sparkles, ListTodo } from 'lucide-react';
+import { Play, Swords, Sparkles, ListTodo, X } from 'lucide-react';
+import { useShiftKey } from './useShiftKey';
 import ScaledMenuBox from './ScaledMenuBox';
 import LeaveButton from './LeaveButton';
 import initialTodoRaw from '../todo.md?raw';
@@ -63,6 +64,7 @@ function TodoCard() {
 
 export default function LobbyScreen() {
     const { gameState, isHost, myId, currentRoom } = useGameStore();
+    const shiftHeld = useShiftKey();
 
     return (
         <>
@@ -106,10 +108,28 @@ export default function LobbyScreen() {
                             <span className="color-dot" style={{background: p.color}}></span>
                             {p.name} {p.id === myId ? '(You)' : ''}
                         </div>
-                        {p.isSpectator && <span style={{color: '#94a3b8', fontSize: 12}}>Spectating</span>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {p.isSpectator && <span style={{color: '#94a3b8', fontSize: 12}}>Spectating</span>}
+                            {isHost && p.id !== myId && (
+                                <button 
+                                    className="kick-btn"
+                                    onClick={(e) => { e.stopPropagation(); store.kickPlayer(p.id); }}
+                                    title="Kick Player"
+                                    style={{ visibility: shiftHeld ? 'visible' : 'hidden' }}
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>
+
+            {isHost && gameState.players.length > 1 && (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: '-10px', marginBottom: '15px', textAlign: 'center' }}>
+                    Hold <kbd style={{ padding: '2px 4px', background: '#333', borderRadius: '4px', color: '#fff' }}>Shift</kbd> to kick players
+                </p>
+            )}
 
             {isHost ? (
                 <button className="btn btn-accent" onClick={() => store.startGame()}>

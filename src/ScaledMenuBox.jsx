@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 // The "Create New Game" button is ~62px tall — use that as minimum gap on all sides
 const FLOAT_GAP = 62;
@@ -13,6 +13,7 @@ const MIN_ZOOM = 0.35;
 export default function ScaledMenuBox({ children, className = '', style = {} }) {
   const ref = useRef(null);
   const frameRef = useRef(null);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     const el = ref.current;
@@ -31,7 +32,9 @@ export default function ScaledMenuBox({ children, className = '', style = {} }) 
       const availH = window.innerHeight - FLOAT_GAP * 2;
 
       const z = Math.min(1, availW / naturalW, availH / naturalH);
-      el.style.zoom = String(Math.max(MIN_ZOOM, z));
+      const newZoom = Math.max(MIN_ZOOM, z);
+      el.style.zoom = String(newZoom);
+      setZoom(newZoom);
     };
 
     const debouncedRecalc = () => {
@@ -64,7 +67,7 @@ export default function ScaledMenuBox({ children, className = '', style = {} }) 
   }, []);
 
   return (
-    <div ref={ref} className={`menu-box ${className}`} style={style}>
+    <div ref={ref} className={`menu-box ${className}`} style={{ ...style, zoom }}>
       {children}
     </div>
   );

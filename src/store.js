@@ -139,6 +139,24 @@ class GameStore {
                 this.gameState.leaderboard = [];
                 this.isSpectator = false;
                 this.notify();
+            } else if (payload.action === 'PLAYER_KICKED') {
+                if (payload.playerId === this.myId) {
+                    this.errorMsg = 'You were kicked by the host.';
+                    setTimeout(() => {
+                        if (this.errorMsg === 'You were kicked by the host.') {
+                            this.errorMsg = '';
+                            this.notify();
+                        }
+                    }, 4000);
+                    this.gameState.status = 'CONNECT';
+                    this.currentRoom = '';
+                    this.gameState.players = [];
+                    this.gameState.leaderboard = [];
+                    this.isSpectator = false;
+                    this.notify();
+                } else {
+                    this.removePlayer(payload.playerId);
+                }
             } else if (payload.action === 'SYNC_STATE') {
                 this.applyGameState(payload.state);
             } else if (payload.action === 'SYNC_THROW') {
@@ -366,6 +384,15 @@ class GameStore {
         this.isHost = false;
         this.isSpectator = false;
         this.notify();
+    }
+
+    kickPlayer(playerId) {
+        if (!this.isHost) return;
+        socket.emit('host_broadcast', {
+            roomCode: this.currentRoom,
+            data: { action: 'PLAYER_KICKED', playerId }
+        });
+        this.removePlayer(playerId);
     }
 
     removePlayer(playerId) {
