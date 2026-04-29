@@ -117,12 +117,29 @@ class GameStore {
                 });
                 // Also spawn locally on the host
                 this.spawnEmojiParticle(id, data.emoji);
+            } else if (data.action === 'LEAVE_ROOM') {
+                this.removePlayer(id);
             }
         });
 
         // Client Network Receive
         socket.on('game_data', (payload) => {
-            if (payload.action === 'SYNC_STATE') {
+            if (!this.currentRoom) return;
+            if (payload.action === 'HOST_LEFT') {
+                this.errorMsg = 'The host left the room.';
+                setTimeout(() => {
+                    if (this.errorMsg === 'The host left the room.') {
+                        this.errorMsg = '';
+                        this.notify();
+                    }
+                }, 4000);
+                this.gameState.status = 'CONNECT';
+                this.currentRoom = '';
+                this.gameState.players = [];
+                this.gameState.leaderboard = [];
+                this.isSpectator = false;
+                this.notify();
+            } else if (payload.action === 'SYNC_STATE') {
                 this.applyGameState(payload.state);
             } else if (payload.action === 'SYNC_THROW') {
                 this.applyThrow(payload.throwData);
@@ -326,6 +343,61 @@ class GameStore {
         } else {
             this.gameState.status = 'LOBBY';
             this.notify();
+        }
+    }
+
+    leaveRoom() {
+        if (!this.isHost) {
+            socket.emit('client_send', {
+                roomCode: this.currentRoom,
+                data: { action: 'LEAVE_ROOM' }
+            });
+        } else {
+            socket.emit('host_broadcast', {
+                roomCode: this.currentRoom,
+                data: { action: 'HOST_LEFT' }
+            });
+        }
+        this.clearTurnTimer();
+        this.gameState.status = 'CONNECT';
+        this.currentRoom = '';
+        this.gameState.players = [];
+        this.gameState.leaderboard = [];
+        this.isHost = false;
+        this.isSpectator = false;
+        this.notify();
+    }
+
+    removePlayer(playerId) {
+        if (!this.isHost) return;
+        if (this.gameState.status === 'GAMEOVER') return;
+
+        this.gameState.players = this.gameState.players.filter(p => p.id !== playerId);
+        
+        if (this.gameState.status !== 'PLAYING' && this.gameState.status !== 'MOVING') {
+            this.gameState.leaderboard = this.getSortedLeaderboard();
+            this.hostBroadcastState();
+            return;
+        }
+
+        const oldActiveId = this.gameState.turnQueue[this.gameState.turnQueueIndex];
+        this.gameState.turnQueue = this.gameState.turnQueue.filter(id => id !== playerId);
+
+        if (oldActiveId === playerId) {
+            this.gameState.turnQueueIndex--;
+            if (!this.physicsInterval) {
+                this.checkTurnEnd();
+            } else {
+                this.gameState.leaderboard = this.getSortedLeaderboard();
+                this.hostBroadcastState();
+            }
+        } else {
+            const newIndex = this.gameState.turnQueue.indexOf(oldActiveId);
+            if (newIndex !== -1) {
+                this.gameState.turnQueueIndex = newIndex;
+            }
+            this.gameState.leaderboard = this.getSortedLeaderboard();
+            this.hostBroadcastState();
         }
     }
 

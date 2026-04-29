@@ -1,5 +1,3 @@
 - use a physics engine library (if this doesnt end up happening just make the stones rotate)
 - auto kick players who have been inactive for 2 minutes
-- add return to main menu button, is "back" when in lobby and "quit" when in game
-- optimize emojis since it lags when theres a lot
 - add sound

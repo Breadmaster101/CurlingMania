@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import { useGameStore } from './useGameStore';
 import { store } from './store';
 import GameCanvas from './GameCanvas';
+import LeaveButton from './LeaveButton';
 import { Trophy, Activity, Swords, Sparkles, AlertTriangle, Menu, X } from 'lucide-react';
 
 function useIsMobile(breakpoint = 640) {
@@ -144,6 +145,7 @@ export default function GameScreen() {
 
     return (
         <div className="game-screen-wrapper">
+            <LeaveButton />
             {/* AFK Warning Banner — visible to ALL players */}
             {gameState.turnWarning && (
                 <div className="afk-warning">

@@ -2,6 +2,7 @@ import { useGameStore } from './useGameStore';
 import { store } from './store';
 import { Trophy, Home } from 'lucide-react';
 import ScaledMenuBox from './ScaledMenuBox';
+import LeaveButton from './LeaveButton';
 
 export default function GameOverScreen() {
     const { gameState, myId, isHost } = useGameStore();
@@ -11,6 +12,8 @@ export default function GameOverScreen() {
     const winner = sortedPlayers.length > 0 ? sortedPlayers[0] : null;
 
     return (
+        <>
+        <LeaveButton />
         <ScaledMenuBox>
             <h1 style={{ fontSize: 32, textAlign: 'center', marginBottom: '5px' }}>
                 <Trophy size={36} style={{ verticalAlign: 'middle', marginRight: '10px', color: '#f59e0b' }} />
@@ -52,5 +55,6 @@ export default function GameOverScreen() {
                 </p>
             )}
         </ScaledMenuBox>
+        </>
     );
 }

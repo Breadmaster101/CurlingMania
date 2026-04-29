@@ -1142,3 +1142,37 @@ canvas:active { cursor: grabbing; }
     font-size: 16px;
   }
 }
+
+/* LEAVE BUTTON */
+.leave-btn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    background: var(--panel-bg);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: 0;
+    color: var(--text-main);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 4px 4px 0 var(--shadow-color);
+    transition: transform 0.1s, box-shadow 0.1s, background 0.2s, color 0.2s;
+}
+
+.leave-btn:hover {
+    background: var(--accent);
+    color: white;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--shadow-color);
+}
+
+.leave-btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0px 0px 0 var(--shadow-color);
+}
