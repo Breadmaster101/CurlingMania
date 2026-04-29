@@ -1,3 +1,2 @@
 - use a physics engine library (if this doesnt end up happening just make the stones rotate)
-- auto kick players who have been inactive for 2 minutes
 - add sound

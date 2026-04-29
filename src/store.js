@@ -14,6 +14,8 @@ const EMOJI_KEYBINDS = {
     'l': '💀',
 };
 
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
 class GameStore {
     constructor() {
         this.isHost = false;
@@ -88,7 +90,8 @@ class GameStore {
             
             this.gameState.players.push({
                 id: data.id, name: data.name, color: newColor, score: 0, totalScore: 0, 
-                stonesLeft: isLateJoin ? 0 : 3, isSpectator: isLateJoin
+                stonesLeft: isLateJoin ? 0 : 3, isSpectator: isLateJoin,
+                lastActivity: Date.now()
             });
             this.hostBroadcastState();
         });
@@ -96,6 +99,11 @@ class GameStore {
         socket.on('player_data', (payload) => {
             if (!this.isHost) return;
             const { id, data } = payload;
+
+            // Update last activity for this player
+            const player = this.gameState.players.find(p => p.id === id);
+            if (player) player.lastActivity = Date.now();
+
             if (data.action === 'THROW' && this.gameState.status === 'PLAYING' && !this.physicsInterval) {
                 const currentPlayer = this.getActivePlayer();
                 if (currentPlayer && currentPlayer.id === id && currentPlayer.stonesLeft > 0) {
@@ -141,7 +149,7 @@ class GameStore {
                 this.notify();
             } else if (payload.action === 'PLAYER_KICKED') {
                 if (payload.playerId === this.myId) {
-                    this.errorMsg = 'You were kicked by the host.';
+                    this.errorMsg = payload.reason || 'You were kicked by the host.';
                     setTimeout(() => {
                         if (this.errorMsg === 'You were kicked by the host.') {
                             this.errorMsg = '';
@@ -172,10 +180,37 @@ class GameStore {
                 }
             }
         });
+
+        // Inactivity checker (host-only)
+        this.inactivityInterval = setInterval(() => {
+            if (!this.isHost || !this.currentRoom) return;
+
+            const now = Date.now();
+            const playersToKick = this.gameState.players.filter(p => 
+                p.id !== this.myId && (now - (p.lastActivity || 0)) > INACTIVITY_TIMEOUT
+            );
+
+            playersToKick.forEach(p => {
+                this.kickPlayer(p.id, 'Kicked due to inactivity.');
+            });
+
+            // Self-kick (host inactivity)
+            const me = this.gameState.players.find(p => p.id === this.myId);
+            if (me && (now - (me.lastActivity || 0)) > INACTIVITY_TIMEOUT) {
+                this.leaveRoom();
+            }
+        }, 10000);
     }
 
     notify() {
         this.listeners.forEach(l => l());
+    }
+
+    updateActivity() {
+        const me = this.gameState.players.find(p => p.id === this.myId);
+        if (me) {
+            me.lastActivity = Date.now();
+        }
     }
 
     subscribe(listener) {
@@ -204,6 +239,7 @@ class GameStore {
     setGameMode(mode) {
         if (!this.isHost) return;
         if (mode !== 'MANIA' && mode !== 'ZEN') return;
+        this.updateActivity();
         this.gameState.gameMode = mode;
         this.hostBroadcastState();
     }
@@ -216,7 +252,8 @@ class GameStore {
         socket.emit('create_room', this.currentRoom);
         
         this.gameState.players.push({
-            id: this.myId, name: this.myName, color: PLAYER_COLORS[0], score: 0, totalScore: 0, stonesLeft: 3, isSpectator: false
+            id: this.myId, name: this.myName, color: PLAYER_COLORS[0], score: 0, totalScore: 0, stonesLeft: 3, isSpectator: false,
+            lastActivity: Date.now()
         });
         this.gameState.status = 'LOBBY';
         this.errorMsg = '';
@@ -246,6 +283,7 @@ class GameStore {
 
     startGame() {
         if (!this.isHost) return;
+        this.updateActivity();
         this.gameState.status = 'PLAYING';
         this.gameState.round = 1;
 
@@ -350,6 +388,7 @@ class GameStore {
     returnToLobby() {
         this.clearTurnTimer();
         if (this.isHost) {
+            this.updateActivity();
             this.gameState.status = 'LOBBY';
             this.gameState.players.forEach((p, i) => {
                 if (p.isSpectator) {
@@ -386,11 +425,11 @@ class GameStore {
         this.notify();
     }
 
-    kickPlayer(playerId) {
+    kickPlayer(playerId, reason) {
         if (!this.isHost) return;
         socket.emit('host_broadcast', {
             roomCode: this.currentRoom,
-            data: { action: 'PLAYER_KICKED', playerId }
+            data: { action: 'PLAYER_KICKED', playerId, reason }
         });
         this.removePlayer(playerId);
     }
@@ -765,6 +804,7 @@ class GameStore {
 
         const dist = Math.hypot(pos.x - this.activeStone.x, pos.y - this.activeStone.y);
         if (dist <= 30) {
+            this.updateActivity();
             this.isGrabbing = true;
             this.mouseHistory = [{ x: pos.x, y: pos.y, time: Date.now() }];
         }
@@ -852,6 +892,7 @@ class GameStore {
     // ─── Emoji Reaction System ────────────────────────────
 
     sendEmoji(emoji) {
+        this.updateActivity();
         // Spawn locally
         this.spawnEmojiParticle(this.myId, emoji);
 
