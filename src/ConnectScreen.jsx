@@ -1,77 +1,93 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { Radio, PlusCircle, ChevronRight, AlertTriangle, Cpu } from 'lucide-react';
 import { store } from './store';
-import { Gamepad2, ArrowRight, AlertTriangle, Loader } from 'lucide-react';
 import { useGameStore } from './useGameStore';
 import ScaledMenuBox from './ScaledMenuBox';
 
 export default function ConnectScreen() {
-   const [name, setName] = useState('');
-   const [room, setRoom] = useState('');
-   const [joining, setJoining] = useState(false);
-   const { errorMsg } = useGameStore();
+  const { errorMsg, connection, myName } = useGameStore();
+  const [name, setName] = useState(myName);
+  const [room, setRoom] = useState('');
 
-   // Reset joining state when an error comes back
+  const handleCreate = () => {
+    store.createRoom(name);
+  };
 
-   useEffect(() => {
-      if (errorMsg && joining) {
-         setJoining(false);
-      }
-   }, [errorMsg, joining]);
+  const handleJoin = () => {
+    const code = room.trim().toUpperCase();
+    if (code.length !== 4) {
+      store.patch({ errorMsg: 'Room codes are 4 letters in Retrocycles.' });
+      return;
+    }
+    store.joinRoom(name, code);
+  };
 
-   const handleJoin = () => {
-      if (joining) return;
-      const code = room.trim().toUpperCase();
-      if (code.length !== 3) {
-         store.errorMsg = 'Room codes are 3 characters. Check the code and try again.';
-         store.notify();
-         return;
-      }
-      setJoining(true);
-      store.joinRoom(name || 'Curler_' + Math.floor(Math.random() * 1000), code);
-   }
+  return (
+    <ScaledMenuBox className="menu-box menu-box-hero">
+      <div className="hero-badge">
+        <Cpu size={14} />
+        <span>{connection === 'online' ? 'Network online' : 'Connecting to room server'}</span>
+      </div>
 
-   const handleCreate = () => {
-      store.createRoom(name || 'Curler_' + Math.floor(Math.random() * 1000));
-   }
+      <h1>Retrocycles</h1>
+      <p>
+        A neon 3D light-cycle arena where looping territory matters as much as survival.
+      </p>
 
-   return (
-      <ScaledMenuBox>
-         <h1>CurlingMania</h1>
-         <p>Grab, Drag, and Release!</p>
+      <div className="input-group">
+        <label>Rider Name</label>
+        <input
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value);
+            store.clearError();
+          }}
+          placeholder="Choose a callsign"
+          maxLength={18}
+        />
+      </div>
 
-         <div className="input-group">
-            <label>Player Name</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Enter your name..." maxLength={24} />
-         </div>
-         <div className="input-group">
-            <label>Room Code (To Join)</label>
-            <input
-               value={room}
-               onChange={e => { setRoom(e.target.value.toUpperCase()); if (errorMsg) { store.errorMsg = ''; store.notify(); } }}
-               placeholder="Enter room code..."
-               maxLength={3}
-               autoCapitalize="characters"
-            />
-         </div>
+      <div className="input-group">
+        <label>Room Code</label>
+        <input
+          value={room}
+          onChange={(event) => {
+            setRoom(event.target.value.toUpperCase());
+            store.clearError();
+          }}
+          placeholder="ABCD"
+          maxLength={4}
+          autoCapitalize="characters"
+        />
+      </div>
 
-         {errorMsg && (
-            <div className="join-error-banner">
-               <AlertTriangle size={16} />
-               <span>{errorMsg}</span>
-            </div>
-         )}
+      {errorMsg && (
+        <div className="join-error-banner">
+          <AlertTriangle size={16} />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
-         <button className="btn btn-accent" onClick={handleJoin} disabled={joining}>
-            {joining ? <><Loader size={20} className="spin-icon" /> Joining...</> : <><ArrowRight size={20} /> Join Game</>}
-         </button>
-         <div style={{ margin: '0 0 15px 0', color: '#94a3b8', fontSize: '14px', fontWeight: 600 }}>OR</div>
-         <button className="btn" onClick={handleCreate}>
-            <Gamepad2 size={20} /> Create New Game
-         </button>
-         <div style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600, marginTop: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Created by E-Money aka Mindfreak from San Marteo.🦟
-         </div>
-      </ScaledMenuBox>
-   );
+      <button className="btn btn-accent" onClick={handleJoin} disabled={connection !== 'online'}>
+        <ChevronRight size={18} />
+        Join Room
+      </button>
+
+      <button className="btn" onClick={handleCreate} disabled={connection !== 'online'}>
+        <PlusCircle size={18} />
+        Create Arena
+      </button>
+
+      <div className="connect-notes">
+        <div>
+          <Radio size={14} />
+          <span>Real-time multiplayer via the included Node room server.</span>
+        </div>
+        <div>
+          <Radio size={14} />
+          <span>Late joiners spectate live and jump in on the next match.</span>
+        </div>
+      </div>
+    </ScaledMenuBox>
+  );
 }
-
