@@ -1200,3 +1200,601 @@ canvas:active { cursor: grabbing; }
     transform: translate(2px, 2px);
     box-shadow: 0px 0px 0 var(--shadow-color);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   🍡 PASTEL KAWAII / COZY THEME
+   Activated by data-theme="cozy" on <html>
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+[data-theme="cozy"] {
+    --bg-color: #f3e8ff;
+    --panel-bg: #fffbfe;
+
+    --border-color: #e9b8d4;
+    --border-width: 2px;
+    --shadow-color: rgba(196, 181, 253, 0.45);
+    --shadow-offset: 0px;
+
+    --text-main: #4a3560;
+    --text-muted: #8b7a9e;
+
+    --primary: #f9a8d4;
+    --secondary: #fef3c7;
+    --accent: #f472b6;
+    --success: #6ee7b7;
+
+    --ice-bg: #fdf2f8;
+    --ice-border: #e9b8d4;
+}
+
+/* ─── Global Cozy Resets ──────────────────────────────── */
+[data-theme="cozy"] * {
+    font-family: 'Nunito', system-ui, sans-serif;
+}
+
+[data-theme="cozy"] body,
+[data-theme="cozy"] html,
+[data-theme="cozy"] #root {
+    background-image: radial-gradient(rgba(196, 181, 253, 0.3) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────── */
+[data-theme="cozy"] ::-webkit-scrollbar-track {
+    background: var(--bg-color);
+    border-left: 1px solid var(--border-color);
+}
+
+[data-theme="cozy"] ::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+[data-theme="cozy"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* ─── Menu Box / Panels ───────────────────────────────── */
+[data-theme="cozy"] .menu-box {
+    border-radius: 20px;
+    border-color: var(--border-color);
+    box-shadow: 0 8px 32px rgba(196, 181, 253, 0.3);
+    animation: cozyFadeIn 0.5s ease-out;
+}
+
+@keyframes cozyFadeIn {
+    0% { transform: translateY(-20px) scale(0.97); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+[data-theme="cozy"] .menu-box h1 {
+    text-shadow: 2px 2px 0 #fef3c7;
+    letter-spacing: -1px;
+    color: #6d28d9;
+}
+
+[data-theme="cozy"] .menu-box p {
+    color: var(--text-muted);
+}
+
+/* ─── Inputs ──────────────────────────────────────────── */
+[data-theme="cozy"] input {
+    border-radius: 12px;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.2);
+    background: #fffbfe;
+}
+
+[data-theme="cozy"] input:focus {
+    background: #fef3c7;
+    transform: none;
+    box-shadow: 0 0 0 3px rgba(249, 168, 212, 0.3);
+}
+
+[data-theme="cozy"] input::placeholder {
+    color: #c4b5fd;
+}
+
+/* ─── Error Banner ────────────────────────────────────── */
+[data-theme="cozy"] .join-error-banner {
+    border-radius: 12px;
+    border-color: #f9a8d4;
+    background: #fdf2f8;
+    color: #be185d;
+    box-shadow: 0 2px 8px rgba(244, 114, 182, 0.15);
+    animation: cozyShake 0.3s ease;
+}
+
+@keyframes cozyShake {
+    0% { transform: translateX(-4px); opacity: 0; }
+    50% { transform: translateX(2px); }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+/* ─── Buttons ─────────────────────────────────────────── */
+[data-theme="cozy"] .btn {
+    border-radius: 14px;
+    border-color: var(--border-color);
+    box-shadow: 0 4px 16px rgba(196, 181, 253, 0.3);
+    text-transform: none;
+    font-weight: 700;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background 0.2s;
+}
+
+[data-theme="cozy"] .btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 24px rgba(196, 181, 253, 0.4);
+    background: var(--primary);
+}
+
+[data-theme="cozy"] .btn:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.2);
+}
+
+[data-theme="cozy"] .btn:disabled {
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.15);
+}
+
+[data-theme="cozy"] .btn-accent {
+    background: var(--accent);
+}
+
+[data-theme="cozy"] .btn-accent:hover {
+    background: #ec4899;
+}
+
+[data-theme="cozy"] .btn-secondary {
+    background: #fffbfe;
+    color: var(--text-main);
+}
+
+[data-theme="cozy"] .btn-secondary:hover {
+    background: var(--secondary);
+}
+
+/* ─── Player List ─────────────────────────────────────── */
+[data-theme="cozy"] .player-list-box {
+    background: rgba(254, 243, 199, 0.3);
+    border-radius: 14px;
+    border-color: var(--border-color);
+    box-shadow: inset 0 2px 8px rgba(196, 181, 253, 0.15);
+}
+
+[data-theme="cozy"] .player-list-item {
+    border-radius: 12px;
+    border-color: var(--border-color);
+    border-bottom: none;
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.15);
+    background: #fffbfe;
+}
+
+[data-theme="cozy"] .player-list-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(196, 181, 253, 0.25);
+}
+
+[data-theme="cozy"] .color-dot {
+    border-radius: 50%;
+    border-color: var(--border-color);
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.3);
+}
+
+/* ─── Game Panels ─────────────────────────────────────── */
+[data-theme="cozy"] .panel {
+    border-radius: 20px;
+    border-color: var(--border-color);
+    box-shadow: 0 8px 32px rgba(196, 181, 253, 0.3);
+    animation: cozySlidePanel 0.5s ease-out;
+}
+
+@keyframes cozySlidePanel {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+[data-theme="cozy"] .panel h2 {
+    border-bottom-color: var(--border-color);
+    text-transform: none;
+    color: #6d28d9;
+}
+
+[data-theme="cozy"] .player-row {
+    border-radius: 12px;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.15);
+    background: #fffbfe;
+}
+
+[data-theme="cozy"] .player-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(196, 181, 253, 0.25);
+}
+
+[data-theme="cozy"] .player-row.active-turn {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(253, 230, 138, 0.4);
+    border-color: #fbbf24;
+}
+
+[data-theme="cozy"] .player-row.spectator {
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.1);
+}
+
+/* ─── Stat Box ────────────────────────────────────────── */
+[data-theme="cozy"] .stat-box {
+    border-radius: 14px;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.15);
+    background: rgba(254, 243, 199, 0.25);
+}
+
+[data-theme="cozy"] .stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(196, 181, 253, 0.25);
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+[data-theme="cozy"] .stat-label {
+    text-transform: none;
+    color: var(--text-muted);
+}
+
+[data-theme="cozy"] .stat-value {
+    color: #6d28d9;
+}
+
+/* ─── Turn Indicator ──────────────────────────────────── */
+[data-theme="cozy"] .turn-indicator {
+    border-radius: 14px;
+    border-color: var(--border-color);
+    box-shadow: 0 4px 16px rgba(196, 181, 253, 0.3);
+    text-transform: none;
+    color: var(--text-main);
+}
+
+[data-theme="cozy"] .turn-indicator.wiggle-turn {
+    animation: cozyBounce 2s ease-in-out infinite;
+}
+
+@keyframes cozyBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* ─── Canvas ──────────────────────────────────────────── */
+[data-theme="cozy"] canvas {
+    border-radius: 16px;
+    border-color: var(--border-color);
+    box-shadow: 0 8px 32px rgba(196, 181, 253, 0.25);
+    background-color: #fdf2f8;
+}
+
+/* ─── Gamemode Cards ──────────────────────────────────── */
+[data-theme="cozy"] .gamemode-card {
+    border-radius: 16px;
+    border-color: var(--border-color);
+    box-shadow: 0 4px 16px rgba(196, 181, 253, 0.25);
+    background: #fffbfe;
+}
+
+[data-theme="cozy"] .gamemode-card:hover:not(.disabled) {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(196, 181, 253, 0.35);
+}
+
+[data-theme="cozy"] .gamemode-card:active:not(.disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.2);
+}
+
+[data-theme="cozy"] .gamemode-card.selected {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(253, 230, 138, 0.4);
+}
+
+[data-theme="cozy"] .gamemode-card-icon {
+    border-radius: 14px;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.2);
+}
+
+[data-theme="cozy"] .gamemode-card-name {
+    text-transform: none;
+    color: #6d28d9;
+}
+
+[data-theme="cozy"] .gamemode-card-check {
+    border-radius: 50%;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(110, 231, 183, 0.3);
+    animation: cozyPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cozyPop {
+    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+    100% { transform: scale(1) rotate(10deg); opacity: 1; }
+}
+
+/* ─── Gamemode Badge ──────────────────────────────────── */
+[data-theme="cozy"] .gamemode-badge-container {
+    border-radius: 12px;
+    border-color: var(--border-color);
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    box-shadow: 0 4px 12px rgba(196, 181, 253, 0.25);
+    text-transform: none;
+}
+
+/* ─── AFK Warning ─────────────────────────────────────── */
+[data-theme="cozy"] .afk-warning {
+    border-radius: 14px;
+    border-color: var(--border-color);
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    box-shadow: 0 8px 24px rgba(253, 230, 138, 0.3);
+    text-transform: none;
+    animation: cozyPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cozyPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.02); }
+}
+
+/* ─── Emoji Particles ─────────────────────────────────── */
+[data-theme="cozy"] .emoji-particle {
+    filter: drop-shadow(0 2px 4px rgba(196, 181, 253, 0.5));
+}
+
+/* ─── Emoji Glossary ──────────────────────────────────── */
+[data-theme="cozy"] .emoji-glossary {
+    border-top-color: var(--border-color);
+}
+
+[data-theme="cozy"] .emoji-glossary-item {
+    border-radius: 10px;
+    border-color: var(--border-color);
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.15);
+    background: rgba(254, 243, 199, 0.3);
+}
+
+[data-theme="cozy"] .emoji-glossary-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(196, 181, 253, 0.25);
+    background: rgba(254, 243, 199, 0.6);
+}
+
+[data-theme="cozy"] .emoji-glossary-item:active,
+[data-theme="cozy"] .emoji-glossary-item.active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.15);
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+[data-theme="cozy"] .emoji-key {
+    border-radius: 6px;
+    border-color: var(--border-color);
+    background: #fffbfe;
+}
+
+/* ─── Todo Card ───────────────────────────────────────── */
+[data-theme="cozy"] .todo-card {
+    border-radius: 16px;
+    border-color: var(--border-color);
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    box-shadow: 0 8px 32px rgba(253, 230, 138, 0.3);
+    transform: rotate(-1deg);
+}
+
+[data-theme="cozy"] .todo-card:hover {
+    transform: rotate(0deg) translateY(-4px);
+}
+
+[data-theme="cozy"] .todo-card-header {
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="cozy"] .todo-card-list li::before {
+    border-radius: 50%;
+    background: #6d28d9;
+}
+
+/* ─── Leave Button ────────────────────────────────────── */
+[data-theme="cozy"] .leave-btn {
+    border-radius: 12px;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.2);
+    text-transform: none;
+    background: #fffbfe;
+}
+
+[data-theme="cozy"] .leave-btn:hover {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(244, 114, 182, 0.3);
+}
+
+[data-theme="cozy"] .leave-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.15);
+}
+
+/* ─── Kick Button ─────────────────────────────────────── */
+[data-theme="cozy"] .kick-btn {
+    border-radius: 8px;
+    border-color: var(--border-color);
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.2);
+}
+
+[data-theme="cozy"] .kick-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(196, 181, 253, 0.25);
+}
+
+[data-theme="cozy"] .kick-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.15);
+}
+
+/* ─── Mobile HUD ──────────────────────────────────────── */
+[data-theme="cozy"] .mobile-hud-bar {
+    border-bottom-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.2);
+    background: #fffbfe;
+}
+
+[data-theme="cozy"] .mobile-hud-turn {
+    border-radius: 10px;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 6px rgba(196, 181, 253, 0.2);
+}
+
+[data-theme="cozy"] .mobile-hud-stat {
+    border-radius: 10px;
+    border-color: var(--border-color);
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.15);
+    background: rgba(254, 243, 199, 0.25);
+}
+
+[data-theme="cozy"] .mobile-hud-btn {
+    border-radius: 10px;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 6px rgba(196, 181, 253, 0.2);
+    background: var(--primary);
+}
+
+[data-theme="cozy"] .mobile-hud-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(196, 181, 253, 0.15);
+}
+
+/* ─── Mobile Drawer ───────────────────────────────────── */
+[data-theme="cozy"] .mobile-drawer {
+    border-left-color: var(--border-color);
+    box-shadow: -4px 0 16px rgba(196, 181, 253, 0.25);
+    background: #fffbfe;
+}
+
+[data-theme="cozy"] .mobile-drawer h2 {
+    border-bottom-color: var(--border-color);
+    text-transform: none;
+    color: #6d28d9;
+}
+
+[data-theme="cozy"] .mobile-drawer-close {
+    border-radius: 8px;
+    border-color: var(--border-color);
+    box-shadow: 0 1px 4px rgba(196, 181, 253, 0.2);
+}
+
+/* ─── Mobile Emoji Bar ────────────────────────────────── */
+[data-theme="cozy"] .mobile-emoji-btn {
+    border-radius: 12px;
+    border-color: var(--border-color);
+    box-shadow: 0 2px 6px rgba(196, 181, 253, 0.2);
+    background: rgba(255, 251, 254, 0.9);
+}
+
+[data-theme="cozy"] .mobile-emoji-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 3px rgba(196, 181, 253, 0.15);
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+
+/* ─── Theme Toggle Button ─────────────────────────────── */
+.theme-toggle-container {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: var(--panel-bg);
+    color: var(--text-main);
+    border: 2px solid var(--border-color);
+    border-radius: 0;
+    cursor: pointer;
+    opacity: 1;
+    transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+    font-family: inherit;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.theme-toggle-btn:hover {
+    transform: translate(-1px, -1px);
+    background: var(--secondary);
+    box-shadow: 3px 3px 0 var(--shadow-color);
+}
+
+.theme-toggle-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--shadow-color);
+}
+
+.theme-toggle-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.theme-toggle-popup {
+    margin-left: 8px;
+    padding: 4px 8px;
+    background: var(--panel-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-10px);
+    transition: opacity 0.2s, transform 0.2s;
+    white-space: nowrap;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.theme-toggle-container:hover .theme-toggle-popup {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Cozy overrides for the toggle button itself */
+[data-theme="cozy"] .theme-toggle-btn {
+    border-radius: 4px;
+    box-shadow: none;
+    background: transparent;
+    border-color: rgba(196, 181, 253, 0.8);
+}
+
+[data-theme="cozy"] .theme-toggle-btn:hover {
+    transform: scale(1.1);
+    box-shadow: none;
+    background: #fffbfe;
+}
+
+[data-theme="cozy"] .theme-toggle-btn:active {
+    transform: scale(0.9);
+    box-shadow: none;
+}
+
+[data-theme="cozy"] .theme-toggle-popup {
+    background: #fffbfe;
+    border: none;
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.25);
+    border-radius: 8px;
+    color: var(--text-main);
+}
