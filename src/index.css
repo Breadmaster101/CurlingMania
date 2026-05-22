@@ -1798,3 +1798,77 @@ canvas:active { cursor: grabbing; }
     border-radius: 8px;
     color: var(--text-main);
 }
+/* --- Mute Toggle Button ------------------------------- */
+.mute-toggle-container {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+}
+
+.mute-toggle-popup {
+    margin-right: 8px;
+    padding: 6px 12px;
+    background: var(--panel-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    box-shadow: 2px 2px 0 var(--shadow-color);
+    display: flex;
+    align-items: center;
+}
+
+.mute-toggle-container:hover .mute-toggle-popup,
+.mute-toggle-container:focus-within .mute-toggle-popup {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+.volume-slider {
+    width: 100px;
+    margin: 0;
+    padding: 0;
+    height: 8px;
+    -webkit-appearance: none;
+    background: var(--border-color);
+    border: none;
+    box-shadow: none;
+    outline: none;
+}
+.volume-slider:focus {
+    transform: none;
+    box-shadow: none;
+    background: var(--border-color);
+}
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--primary);
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+}
+
+[data-theme="cozy"] .mute-toggle-popup {
+    background: #fffbfe;
+    border: none;
+    box-shadow: 0 2px 8px rgba(196, 181, 253, 0.25);
+    border-radius: 8px;
+}
+[data-theme="cozy"] .volume-slider,
+[data-theme="cozy"] .volume-slider:focus {
+    background: #e2e8f0;
+}
+[data-theme="cozy"] .volume-slider::-webkit-slider-thumb {
+    background: #c4b5fd;
+    border: none;
+    border-radius: 50%;
+}

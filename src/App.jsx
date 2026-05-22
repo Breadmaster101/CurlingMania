@@ -5,6 +5,7 @@ import LobbyScreen from './LobbyScreen';
 import GameScreen from './GameScreen';
 import GameOverScreen from './GameOverScreen';
 import ThemeToggle from './ThemeToggle';
+import MuteToggle from './MuteToggle';
 
 export default function App() {
   const { gameState } = useGameStore();
@@ -16,6 +17,7 @@ export default function App() {
        {(gameState.status === 'PLAYING' || gameState.status === 'MOVING') && <GameScreen />}
        {gameState.status === 'GAMEOVER' && <GameOverScreen />}
        <ThemeToggle />
+       <MuteToggle />
      </ThemeProvider>
   );
 }

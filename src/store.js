@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client';
+import { audioManager } from './AudioManager';
 
 const socket = io('https://quicklash-server.onrender.com');
 
@@ -286,6 +287,7 @@ class GameStore {
         this.updateActivity();
         this.gameState.status = 'PLAYING';
         this.gameState.round = 1;
+        audioManager.playStart();
 
         this.gameState.stones = [];
         this.gameState.players.forEach(p => { 
@@ -628,10 +630,14 @@ class GameStore {
             if (Math.abs(s.vy) < 0.05) s.vy = 0;
             if (s.vx !== 0 || s.vy !== 0) moving = true;
 
-            if (s.x < s.radius + 5) { s.x = s.radius + 5; s.vx *= -0.8; }
-            if (s.x > 400 - s.radius - 5) { s.x = 400 - s.radius - 5; s.vx *= -0.8; }
-            if (s.y < s.radius + 5) { s.y = s.radius + 5; s.vy *= -0.8; }
-            if (s.y > 800 - s.radius - 5) { s.y = 800 - s.radius - 5; s.vy *= -0.8; }
+            let hitWall = false;
+            if (s.x < s.radius + 5) { s.x = s.radius + 5; s.vx *= -0.8; hitWall = true; }
+            if (s.x > 400 - s.radius - 5) { s.x = 400 - s.radius - 5; s.vx *= -0.8; hitWall = true; }
+            if (s.y < s.radius + 5) { s.y = s.radius + 5; s.vy *= -0.8; hitWall = true; }
+            if (s.y > 800 - s.radius - 5) { s.y = 800 - s.radius - 5; s.vy *= -0.8; hitWall = true; }
+            if (hitWall && (Math.abs(s.vx) > 0.5 || Math.abs(s.vy) > 0.5)) {
+                audioManager.playCollision();
+            }
         });
 
         for (let i = 0; i < this.gameState.stones.length; i++) {
@@ -654,6 +660,10 @@ class GameStore {
                     p *= restitution;
                     s1.vx -= p * nx;  s1.vy -= p * ny;
                     s2.vx += p * nx;  s2.vy += p * ny;
+
+                    if (Math.abs(p) > 0.5) {
+                        audioManager.playCollision();
+                    }
                 }
             }
         }
@@ -792,6 +802,9 @@ class GameStore {
         
         if (oldStatus === 'MOVING' && this.gameState.status === 'PLAYING') {
             this.activeStone = { x: 200, y: 720 };
+        }
+        if (oldStatus === 'LOBBY' && this.gameState.status === 'PLAYING') {
+            audioManager.playStart();
         }
         this.notify();
     }
