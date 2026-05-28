@@ -482,6 +482,11 @@ class GameStore {
     startTurnTimer() {
         if (!this.isHost) return;
         this.clearTurnTimer();
+        
+        // Disable AFK skipping if only 1 player is playing
+        const activePlayers = this.gameState.players.filter(p => !p.isSpectator);
+        if (activePlayers.length <= 1) return;
+
         this.turnStartTime = Date.now();
         this.gameState.turnWarning = false;
         this.gameState.turnWarningPlayerName = '';
