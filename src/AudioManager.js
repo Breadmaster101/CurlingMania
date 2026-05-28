@@ -1,6 +1,7 @@
 class AudioManager {
     constructor() {
-        this.muted = localStorage.getItem('curling_muted') === 'true';
+        const storedMuted = localStorage.getItem('curling_muted');
+        this.muted = storedMuted === null ? true : storedMuted === 'true';
         this.volume = parseFloat(localStorage.getItem('curling_volume') || '0.5');
         
         this.collisionSound = new Audio('/stone_collision.mp3');
