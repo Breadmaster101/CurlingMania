@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext({ theme: 'brutalist', toggleTheme: () => {} });
 
-export function ThemeProvider({ children }) {
+export function ThemeProvider({ children, className }) {
     const [theme, setTheme] = useState('brutalist');
 
     useEffect(() => {
@@ -15,7 +15,9 @@ export function ThemeProvider({ children }) {
 
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme }}>
-            {children}
+            <div className={className} style={{ display: 'contents' }}>
+                {children}
+            </div>
         </ThemeContext.Provider>
     );
 }

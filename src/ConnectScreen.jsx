@@ -3,6 +3,7 @@ import { store } from './store';
 import { Gamepad2, ArrowRight, AlertTriangle, Loader } from 'lucide-react';
 import { useGameStore } from './useGameStore';
 import ScaledMenuBox from './ScaledMenuBox';
+import EasterEggBackground from './EasterEggBackground';
 
 export default function ConnectScreen() {
    const [name, setName] = useState('');
@@ -35,9 +36,11 @@ export default function ConnectScreen() {
    }
 
    return (
-      <ScaledMenuBox>
-         <h1>CurlingMania</h1>
-         <p>Grab, Drag, and Release!</p>
+      <>
+         {name.toLowerCase().includes('bill') && <EasterEggBackground />}
+         <ScaledMenuBox>
+            <h1>CurlingMania</h1>
+            <p>Grab, Drag, and Release!</p>
 
          <div className="input-group">
             <label>Player Name</label>
@@ -72,6 +75,7 @@ export default function ConnectScreen() {
             Created by E-Money aka Breadmaster/MbappeFartBubble
          </div>
       </ScaledMenuBox>
+      </>
    );
 }
 

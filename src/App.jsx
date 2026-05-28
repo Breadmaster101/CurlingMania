@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGameStore } from './useGameStore';
 import { ThemeProvider } from './ThemeProvider';
 import ConnectScreen from './ConnectScreen';
@@ -6,12 +7,18 @@ import GameScreen from './GameScreen';
 import GameOverScreen from './GameOverScreen';
 import ThemeToggle from './ThemeToggle';
 import MuteToggle from './MuteToggle';
+import EasterEggBackground from './EasterEggBackground';
 
 export default function App() {
-  const { gameState } = useGameStore();
+  const { gameState, myName } = useGameStore();
+  const [randomEasterEgg] = useState(Math.random() < 0.01);
+  
+  const showBillEgg = myName.toLowerCase().includes('bill') && gameState.status !== 'CONNECT';
+  const active = randomEasterEgg || showBillEgg;
   
   return (
      <ThemeProvider>
+       {active && <EasterEggBackground />}
        {gameState.status === 'CONNECT' && <ConnectScreen />}
        {gameState.status === 'LOBBY' && <LobbyScreen />}
        {(gameState.status === 'PLAYING' || gameState.status === 'MOVING') && <GameScreen />}
