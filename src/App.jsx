@@ -8,17 +8,19 @@ import GameOverScreen from './GameOverScreen';
 import ThemeToggle from './ThemeToggle';
 import MuteToggle from './MuteToggle';
 import EasterEggBackground from './EasterEggBackground';
+import ConnectionBanner from './ConnectionBanner';
 
 export default function App() {
   const { gameState, myName } = useGameStore();
-  const [randomEasterEgg] = useState(Math.random() < 0.01);
-  
+  const [randomEasterEgg] = useState(() => Math.random() < 0.01);
+
   const showBillEgg = myName.toLowerCase().includes('bill') && gameState.status !== 'CONNECT';
   const active = randomEasterEgg || showBillEgg;
-  
+
   return (
      <ThemeProvider>
        {active && <EasterEggBackground />}
+       <ConnectionBanner />
        {gameState.status === 'CONNECT' && <ConnectScreen />}
        {gameState.status === 'LOBBY' && <LobbyScreen />}
        {(gameState.status === 'PLAYING' || gameState.status === 'MOVING') && <GameScreen />}

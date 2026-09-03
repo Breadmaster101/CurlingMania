@@ -10,13 +10,18 @@ export function useShiftKey() {
         const upHandler = (e) => {
             if (e.key === 'Shift') setShiftHeld(false);
         };
+        // Alt-tabbing away while holding Shift never delivers the keyup, which
+        // would otherwise leave the kick buttons stuck visible.
+        const resetHandler = () => setShiftHeld(false);
 
         window.addEventListener('keydown', downHandler);
         window.addEventListener('keyup', upHandler);
+        window.addEventListener('blur', resetHandler);
 
         return () => {
             window.removeEventListener('keydown', downHandler);
             window.removeEventListener('keyup', upHandler);
+            window.removeEventListener('blur', resetHandler);
         };
     }, []);
 

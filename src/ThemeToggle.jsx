@@ -1,4 +1,4 @@
-import { useTheme } from './ThemeProvider';
+import { useTheme } from './ThemeContext';
 import { Palette } from 'lucide-react';
 
 export default function ThemeToggle() {

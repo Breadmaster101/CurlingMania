@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { store } from './store';
 import { useGameStore } from './useGameStore';
-import { Play, Swords, Sparkles, ListTodo, X } from 'lucide-react';
+import { Play, Swords, Sparkles, ListTodo, X, WifiOff, Copy, Check } from 'lucide-react';
 import { useShiftKey } from './useShiftKey';
 import ScaledMenuBox from './ScaledMenuBox';
 import LeaveButton from './LeaveButton';
@@ -51,7 +51,7 @@ function TodoCard() {
         <div className="todo-card">
             <div className="todo-card-header">
                 <ListTodo size={14} />
-                <span>Roadmap / E-Money's To-Do</span>
+                <span>Roadmap / E-Money&apos;s To-Do</span>
             </div>
             <ul className="todo-card-list">
                 {items.map((item, i) => (
@@ -62,16 +62,45 @@ function TodoCard() {
     );
 }
 
+/** Room code with a one-tap copy, so hosts don't have to read it out loud. */
+function RoomCode({ code }) {
+    const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        if (!copied) return undefined;
+        const timer = setTimeout(() => setCopied(false), 1500);
+        return () => clearTimeout(timer);
+    }, [copied]);
+
+    const copy = () => {
+        if (!navigator.clipboard) return;
+        navigator.clipboard.writeText(code).then(() => setCopied(true)).catch(() => {});
+    };
+
+    return (
+        <p style={{ marginBottom: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            Code: <strong style={{ color: 'var(--primary)', fontSize: 22 }}>{code}</strong>
+            {navigator.clipboard && (
+                <button className="copy-code-btn" onClick={copy} title="Copy room code">
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                </button>
+            )}
+        </p>
+    );
+}
+
 export default function LobbyScreen() {
     const { gameState, isHost, myId, currentRoom } = useGameStore();
     const shiftHeld = useShiftKey();
+
+    const contenders = gameState.players.filter(p => !p.isSpectator);
 
     return (
         <>
         <LeaveButton />
         <ScaledMenuBox className="menu-box-wide">
             <h1 style={{fontSize: 28}}>Room Lobby</h1>
-            <p style={{marginBottom: 15}}>Code: <strong style={{color: 'var(--primary)', fontSize: 22}}>{currentRoom}</strong></p>
+            <RoomCode code={currentRoom} />
 
             {/* Gamemode Cards */}
             <div className="gamemode-cards">
@@ -103,15 +132,16 @@ export default function LobbyScreen() {
 
             <div className="player-list-box">
                 {gameState.players.map(p => (
-                    <div key={p.id} className="player-list-item">
-                        <div>
+                    <div key={p.id} className={`player-list-item ${p.connected === false ? 'offline' : ''}`}>
+                        <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
                             <span className="color-dot" style={{background: p.color}}></span>
-                            {p.name} {p.id === myId ? '(You)' : ''}
+                            <span className="player-row-name">{p.name} {p.id === myId ? '(You)' : ''}</span>
+                            {p.connected === false && <WifiOff size={13} className="player-row-offline-icon" />}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {p.isSpectator && <span style={{color: '#94a3b8', fontSize: 12}}>Spectating</span>}
                             {isHost && p.id !== myId && (
-                                <button 
+                                <button
                                     className="kick-btn"
                                     onClick={(e) => { e.stopPropagation(); store.kickPlayer(p.id); }}
                                     title="Kick Player"
@@ -132,7 +162,11 @@ export default function LobbyScreen() {
             )}
 
             {isHost ? (
-                <button className="btn btn-accent" onClick={() => store.startGame()}>
+                <button
+                    className="btn btn-accent"
+                    onClick={() => store.startGame()}
+                    disabled={contenders.length === 0}
+                >
                     <Play size={20} fill="currentColor" /> Start Match
                 </button>
             ) : (

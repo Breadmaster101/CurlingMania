@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
 :root {
   --bg-color: #e8f4f8; /* Soft ice blue */
@@ -1206,7 +1207,8 @@ canvas:active { cursor: grabbing; }
    Activated by data-theme="cozy" on <html>
    ═══════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+/* Nunito is imported at the top of this file: a mid-file @import is invalid
+   CSS and gets dropped, which left the cozy theme falling back to system-ui. */
 
 [data-theme="cozy"] {
     --bg-color: #f3e8ff;
@@ -1871,4 +1873,201 @@ canvas:active { cursor: grabbing; }
     background: #c4b5fd;
     border: none;
     border-radius: 50%;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CONNECTION STATUS + PRESENCE
+   ═══════════════════════════════════════════════════════════ */
+
+/* Top-centre banner shown while the socket or the host link is down. */
+.connection-banner {
+  position: fixed;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(90vw, 460px);
+  padding: 10px 18px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: var(--border-width) solid var(--border-color);
+  box-shadow: 4px 4px 0 var(--shadow-color);
+}
+
+.connection-banner span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Neutral variant of the connect-screen banner, for "not an error yet" states. */
+.join-error-banner.connecting {
+  background: var(--panel-bg);
+  color: var(--text-muted);
+  animation: none;
+}
+
+/* A player whose heartbeat stopped, but who may still come back. */
+.player-row.offline {
+  opacity: 0.55;
+}
+
+.player-row.offline .color-dot {
+  background: var(--shadow-color) !important;
+}
+
+.player-row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-row-offline-icon {
+  margin-left: 6px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* ─── Mobile drawer footer (gamemode + leave) ─────────── */
+.mobile-drawer-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mobile-drawer-leave {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--panel-bg);
+  color: var(--text-main);
+  border: var(--border-width) solid var(--border-color);
+  box-shadow: 3px 3px 0 var(--shadow-color);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.mobile-drawer-leave:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--shadow-color);
+}
+
+/* ─── Mobile: keep floating controls clear of the HUD ──── */
+/* The `in-game` class is added to <body> only while GameScreen is mounted,
+   where the HUD bar owns the top strip and the emoji column owns the
+   bottom-left corner. */
+@media (max-width: 640px) {
+  body.in-game .leave-btn {
+    display: none; /* replaced by the Leave button inside the drawer */
+  }
+
+  body.in-game .mute-toggle-container {
+    top: 62px; /* clear the fixed HUD bar */
+  }
+
+  body.in-game .theme-toggle-container {
+    left: auto;
+    right: 16px; /* the emoji column occupies bottom-left */
+  }
+
+  .connection-banner {
+    top: 60px;
+    font-size: 11px;
+    padding: 8px 14px;
+  }
+
+  body.in-game .afk-warning {
+    top: 108px; /* sit below the connection banner instead of on top of it */
+  }
+}
+
+/* ─── Cozy theme variants ─────────────────────────────── */
+[data-theme="cozy"] .connection-banner {
+  background: #f9a8d4;
+  color: #4c1d3d;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(196, 181, 253, 0.35);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+[data-theme="cozy"] .join-error-banner.connecting {
+  background: #fffbfe;
+  color: #8b7099;
+}
+
+[data-theme="cozy"] .mobile-drawer-footer {
+  border-top: 2px solid #f3d9ea;
+}
+
+[data-theme="cozy"] .mobile-drawer-leave {
+  background: #fffbfe;
+  color: #6b4e7d;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(196, 181, 253, 0.25);
+}
+
+.player-list-item.offline {
+  opacity: 0.55;
+}
+
+.player-list-item.offline .color-dot {
+  background: var(--shadow-color) !important;
+}
+
+.leave-btn.confirming {
+  background: var(--accent);
+  color: #fff;
+}
+
+[data-theme="cozy"] .leave-btn.confirming {
+  background: #f9a8d4;
+  color: #4c1d3d;
+}
+
+/* Copy-to-clipboard affordance next to the lobby room code. */
+.copy-code-btn {
+  background: var(--primary);
+  color: #fff;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  padding: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 var(--shadow-color);
+  transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+}
+
+.copy-code-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--shadow-color);
+}
+
+[data-theme="cozy"] .copy-code-btn {
+  background: #c4b5fd;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(196, 181, 253, 0.35);
 }

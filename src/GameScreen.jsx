@@ -1,20 +1,54 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import { useGameStore } from './useGameStore';
 import { store } from './store';
 import GameCanvas from './GameCanvas';
 import LeaveButton from './LeaveButton';
-import { Trophy, Activity, Swords, Sparkles, AlertTriangle, Menu, X } from 'lucide-react';
+import { Trophy, Activity, Swords, Sparkles, AlertTriangle, Menu, X, WifiOff, LogOut } from 'lucide-react';
 import { useShiftKey } from './useShiftKey';
 
 function useIsMobile(breakpoint = 640) {
-    const [isMobile, setIsMobile] = useState(() => window.innerWidth <= breakpoint);
-    useEffect(() => {
-        const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
-        const handler = (e) => setIsMobile(e.matches);
-        mq.addEventListener('change', handler);
-        return () => mq.removeEventListener('change', handler);
-    }, [breakpoint]);
-    return isMobile;
+    const query = useMemo(() => window.matchMedia(`(max-width: ${breakpoint}px)`), [breakpoint]);
+    return useSyncExternalStore(
+        (onChange) => {
+            query.addEventListener('change', onChange);
+            return () => query.removeEventListener('change', onChange);
+        },
+        () => query.matches,
+    );
+}
+
+/** One leaderboard row, shared by the desktop panel and the mobile drawer. */
+function PlayerRow({ player, isCurrent, isHost, myId, shiftHeld, rowRef }) {
+    const offline = player.connected === false;
+    const classes = [
+        'player-row',
+        player.isSpectator ? 'spectator' : '',
+        isCurrent ? 'active-turn' : '',
+        offline ? 'offline' : '',
+    ].filter(Boolean).join(' ');
+
+    return (
+        <div ref={rowRef} className={classes}>
+            <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                <span className="color-dot" style={{ background: player.color }}></span>
+                <span className="player-row-name">{player.name}</span>
+                {offline && <WifiOff size={13} className="player-row-offline-icon" />}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>{player.totalScore + player.score} pts</span>
+                {isHost && player.id !== myId && (
+                    <button
+                        className="kick-btn"
+                        onClick={(e) => { e.stopPropagation(); store.kickPlayer(player.id); }}
+                        title="Kick Player"
+                        style={{ visibility: shiftHeld ? 'visible' : 'hidden' }}
+                    >
+                        <X size={14} />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 }
 
 export default function GameScreen() {
@@ -24,6 +58,9 @@ export default function GameScreen() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const isMobile = useIsMobile();
     const shiftHeld = useShiftKey();
+    // The drawer only exists at mobile widths, so derive its visibility rather
+    // than resetting the flag from an effect on every breakpoint change.
+    const drawerVisible = isMobile && drawerOpen;
 
     // Active player from the turn queue
     const currentPlayerId = (gameState.turnQueue && gameState.turnQueueIndex < gameState.turnQueue.length)
@@ -49,19 +86,18 @@ export default function GameScreen() {
 
     let turnMessage = 'Waiting...';
     let turnBg = '#10b981';
-    
+
     if (gameState.status === 'GAMEOVER') {
         turnMessage = 'Game Over!';
     } else if (currentPlayer) {
         if (currentPlayer.id === myId) {
             turnMessage = 'YOUR TURN!';
-            turnBg = currentPlayer.color;
         } else {
-            turnMessage = isZen 
-                ? `${currentPlayer.name}'s Rink — Stone ${zenStoneNumber}/3` 
+            turnMessage = isZen
+                ? `${currentPlayer.name}'s Rink — Stone ${zenStoneNumber}/3`
                 : `${currentPlayer.name}'s Turn`;
-            turnBg = currentPlayer.color;
         }
+        turnBg = currentPlayer.color;
     }
 
     const GameModeIcon = isZen ? Sparkles : Swords;
@@ -72,78 +108,93 @@ export default function GameScreen() {
         store.sendEmoji(emoji);
     }, []);
 
-    // Position unspawned emoji particles based on their player's leaderboard card
-    const positionNewParticles = useCallback(() => {
-        if (!emojiParticles) return;
-        for (const particle of emojiParticles) {
-            if (particle.spawned) continue;
-            const rowEl = playerRowRefs.current[particle.playerId];
-            if (isMobile && !drawerOpen) {
-                // On mobile if drawer is closed, spawn under the round indicator.
-                particle.x = 30;
-                particle.y = 68;
-                particle.spawned = true;
-            } else if (rowEl) {
-                const rect = rowEl.getBoundingClientRect();
-                // Check if element is actually visible
-                if (rect.width > 0 || rect.height > 0) {
-                    particle.x = rect.left + rect.width / 2;
-                    particle.y = rect.top + rect.height / 2;
-                } else {
-                    particle.x = 30;
-                    particle.y = 68;
-                }
-                particle.spawned = true;
-            } else if (isMobile) {
-                particle.x = 30;
-                particle.y = 68;
-                particle.spawned = true;
-            }
-        }
-    }, [emojiParticles, isMobile, drawerOpen]);
-
+    // Mobile lays the HUD bar and the emoji column over the corners where the
+    // floating Leave/theme/mute buttons live, so scope those overrides to here.
     useEffect(() => {
-        positionNewParticles();
-    }, [emojiParticles, positionNewParticles]);
+        document.body.classList.add('in-game');
+        return () => document.body.classList.remove('in-game');
+    }, []);
+
+    // Drop refs for players who left so the map does not grow without bound.
+    useEffect(() => {
+        const liveIds = new Set(gameState.players.map(p => p.id));
+        for (const id of Object.keys(playerRowRefs.current)) {
+            if (!liveIds.has(id)) delete playerRowRefs.current[id];
+        }
+    }, [gameState.players]);
+
+    // Reactions pop out of the reacting player's leaderboard card. The store
+    // owns the particles, so hand it a resolver rather than mutating them here.
+    useEffect(() => {
+        store.setEmojiAnchorResolver((playerId) => {
+            if (!drawerVisible && isMobile) return null; // leaderboard is off-screen
+            const rowEl = playerRowRefs.current[playerId];
+            if (!rowEl) return null;
+            const rect = rowEl.getBoundingClientRect();
+            if (rect.width <= 0 && rect.height <= 0) return null;
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        });
+        return () => store.setEmojiAnchorResolver(null);
+    }, [isMobile, drawerVisible]);
 
     // Listen for key presses to animate the glossary UI
     useEffect(() => {
-        if (!emojiKeybinds) return;
-        
+        if (!emojiKeybinds) return undefined;
+
+        const isTypingTarget = (target) => target && (
+            target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+        );
+
         const handleKeyDown = (e) => {
-            const key = e.key.toLowerCase();
-            if (emojiKeybinds[key]) {
-                setActiveKeys(prev => {
-                    const next = new Set(prev);
-                    next.add(key);
-                    return next;
-                });
-            }
+            if (e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target)) return;
+            const key = typeof e.key === 'string' ? e.key.toLowerCase() : '';
+            if (!emojiKeybinds[key]) return;
+            setActiveKeys(prev => {
+                if (prev.has(key)) return prev;
+                const next = new Set(prev);
+                next.add(key);
+                return next;
+            });
         };
 
         const handleKeyUp = (e) => {
-            const key = e.key.toLowerCase();
-            if (emojiKeybinds[key]) {
-                setActiveKeys(prev => {
-                    const next = new Set(prev);
-                    next.delete(key);
-                    return next;
-                });
-            }
+            const key = typeof e.key === 'string' ? e.key.toLowerCase() : '';
+            if (!emojiKeybinds[key]) return;
+            setActiveKeys(prev => {
+                if (!prev.has(key)) return prev;
+                const next = new Set(prev);
+                next.delete(key);
+                return next;
+            });
         };
+
+        // A keyup that lands on another window would leave keys stuck lit.
+        const clearKeys = () => setActiveKeys(prev => (prev.size === 0 ? prev : new Set()));
 
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('blur', clearKeys);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
+            window.removeEventListener('blur', clearKeys);
         };
     }, [emojiKeybinds]);
 
-    // Close drawer when switching away from mobile
-    useEffect(() => {
-        if (!isMobile) setDrawerOpen(false);
-    }, [isMobile]);
+    const renderRows = () => displayPlayers.map(p => (
+        <PlayerRow
+            key={p.id}
+            player={p}
+            isCurrent={gameState.status !== 'GAMEOVER' && p.id === currentPlayerId}
+            isHost={isHost}
+            myId={myId}
+            shiftHeld={shiftHeld}
+            rowRef={el => {
+                if (el) playerRowRefs.current[p.id] = el;
+                else delete playerRowRefs.current[p.id];
+            }}
+        />
+    ));
 
     return (
         <div className="game-screen-wrapper">
@@ -153,7 +204,7 @@ export default function GameScreen() {
                 <div className="afk-warning">
                     <AlertTriangle size={18} />
                     <span>
-                        {gameState.turnWarningPlayerName} will be skipped if they don't throw within {gameState.turnTimeLeft}s!
+                        {gameState.turnWarningPlayerName} will be skipped if they don&apos;t throw within {gameState.turnTimeLeft}s!
                     </span>
                 </div>
             )}
@@ -173,16 +224,16 @@ export default function GameScreen() {
                             <span className="mobile-hud-stat-label">S</span>
                             <span className="mobile-hud-stat-value">{myPlayer && !myPlayer.isSpectator ? myPlayer.stonesLeft : 0}</span>
                         </div>
-                        <div className="mobile-hud-btn" onClick={() => setDrawerOpen(true)}>
+                        <button className="mobile-hud-btn" onClick={() => setDrawerOpen(true)} aria-label="Open leaderboard">
                             <Menu size={18} />
-                        </div>
+                        </button>
                     </div>
                 </div>
             )}
 
             {/* ─── MOBILE DRAWER (Leaderboard) ─── */}
             {isMobile && (
-                <div className={`mobile-drawer-overlay ${drawerOpen ? 'open' : ''}`} onClick={(e) => {
+                <div className={`mobile-drawer-overlay ${drawerVisible ? 'open' : ''}`} onClick={(e) => {
                     if (e.target === e.currentTarget) setDrawerOpen(false);
                 }}>
                     <div className="mobile-drawer">
@@ -190,52 +241,30 @@ export default function GameScreen() {
                             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <Trophy size={18} /> Leaderboard
                             </span>
-                            <div className="mobile-drawer-close" onClick={() => setDrawerOpen(false)}>
+                            <button className="mobile-drawer-close" onClick={() => setDrawerOpen(false)} aria-label="Close leaderboard">
                                 <X size={14} />
-                            </div>
+                            </button>
                         </h2>
                         <div style={{ flexGrow: 1, overflowY: 'auto', padding: '4px 12px 12px 4px' }}>
-                            {displayPlayers.map(p => (
-                                <div
-                                    key={p.id}
-                                    ref={el => { playerRowRefs.current[p.id] = el; }}
-                                    className={`player-row ${p.isSpectator ? 'spectator' : ''} ${gameState.status !== 'GAMEOVER' && p.id === currentPlayerId ? 'active-turn' : ''}`}
-                                >
-                                    <div style={{display: 'flex', alignItems: 'center'}}>
-                                        <span className="color-dot" style={{background: p.color}}></span>
-                                        {p.name}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>{p.totalScore + p.score} pts</span>
-                                        {isHost && p.id !== myId && (
-                                            <button 
-                                                className="kick-btn"
-                                                onClick={(e) => { e.stopPropagation(); store.kickPlayer(p.id); }}
-                                                title="Kick Player"
-                                                style={{ visibility: shiftHeld ? 'visible' : 'hidden' }}
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                            {renderRows()}
                         </div>
 
-                        {/* Gamemode badge in drawer */}
-                        <div style={{ 
-                            marginTop: 'auto', paddingTop: 12, borderTop: '2px solid var(--border-color)',
-                            display: 'flex', alignItems: 'center', gap: 8, 
-                            fontWeight: 700, fontSize: 13, textTransform: 'uppercase', color: 'var(--text-muted)'
-                        }}>
-                            <GameModeIcon size={14} />
-                            <span>{gameModeName} Mode</span>
+                        {/* Gamemode badge + leave, since the floating buttons are
+                            hidden behind the HUD bar at this width. */}
+                        <div className="mobile-drawer-footer">
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <GameModeIcon size={14} />
+                                <span>{gameModeName} Mode</span>
+                            </span>
+                            <button className="mobile-drawer-leave" onClick={() => store.leaveRoom()}>
+                                <LogOut size={14} /> Leave
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ─── DESKTOP LAYOUT (unchanged) ─── */}
+            {/* ─── DESKTOP LAYOUT ─── */}
             {!isMobile && (
                 <>
                     {/* Gamemode badge (Moved to float left of Game Stats via CSS) */}
@@ -249,31 +278,7 @@ export default function GameScreen() {
                             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Trophy size={20} /> Leaderboard</span>
                         </h2>
                         <div style={{ flexGrow: 1, overflowY: 'auto', padding: '10px 14px 10px 10px' }}>
-                            {displayPlayers.map(p => (
-                                <div
-                                    key={p.id}
-                                    ref={el => { playerRowRefs.current[p.id] = el; }}
-                                    className={`player-row ${p.isSpectator ? 'spectator' : ''} ${gameState.status !== 'GAMEOVER' && p.id === currentPlayerId ? 'active-turn' : ''}`}
-                                >
-                                    <div style={{display: 'flex', alignItems: 'center'}}>
-                                        <span className="color-dot" style={{background: p.color}}></span>
-                                        {p.name}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>{p.totalScore + p.score} pts</span>
-                                        {isHost && p.id !== myId && (
-                                            <button 
-                                                className="kick-btn"
-                                                onClick={(e) => { e.stopPropagation(); store.kickPlayer(p.id); }}
-                                                title="Kick Player"
-                                                style={{ visibility: shiftHeld ? 'visible' : 'hidden' }}
-                                            >
-                                                <X size={14} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                            {renderRows()}
                         </div>
 
                         {isHost && gameState.players.length > 1 && (
@@ -287,8 +292,8 @@ export default function GameScreen() {
                             <div className="emoji-glossary-title">Reactions</div>
                             <div className="emoji-glossary-content">
                                 {emojiKeybinds && Object.entries(emojiKeybinds).map(([key, emoji]) => (
-                                    <div 
-                                        key={key} 
+                                    <div
+                                        key={key}
                                         className={`emoji-glossary-item ${activeKeys.has(key) ? 'active' : ''}`}
                                         onClick={() => handleEmojiClick(emoji)}
                                     >
@@ -306,12 +311,12 @@ export default function GameScreen() {
                         <div className={`turn-indicator ${currentPlayerId === myId ? 'wiggle-turn' : ''}`} style={{ background: turnBg }}>
                             {turnMessage}
                         </div>
-                        
+
                         <div className="stat-box">
                             <div className="stat-label">Round</div>
                             <div className="stat-value">{gameState.round} / 3</div>
                         </div>
-                        
+
                         <div className="stat-box">
                             <div className="stat-label">Your Stones</div>
                             <div className="stat-value">{myPlayer && !myPlayer.isSpectator ? myPlayer.stonesLeft : 0}</div>
@@ -326,8 +331,8 @@ export default function GameScreen() {
             {isMobile && emojiKeybinds && (
                 <div className="mobile-emoji-bar show">
                     {Object.entries(emojiKeybinds).map(([key, emoji]) => (
-                        <div 
-                            key={key} 
+                        <div
+                            key={key}
                             className="mobile-emoji-btn"
                             onClick={() => handleEmojiClick(emoji)}
                         >
@@ -340,7 +345,7 @@ export default function GameScreen() {
             {/* Emoji particles layer */}
             {emojiParticles && emojiParticles.length > 0 && (
                 <div className="emoji-particle-layer">
-                    {emojiParticles.filter(p => p.spawned).map(p => (
+                    {emojiParticles.map(p => (
                         <span
                             key={p.id}
                             className="emoji-particle"

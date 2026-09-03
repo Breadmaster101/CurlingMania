@@ -7,9 +7,17 @@ import LeaveButton from './LeaveButton';
 export default function GameOverScreen() {
     const { gameState, myId, isHost } = useGameStore();
 
-    // Sort players by score descending
-    const sortedPlayers = [...gameState.players].sort((a, b) => (b.totalScore + b.score) - (a.totalScore + a.score));
-    const winner = sortedPlayers.length > 0 ? sortedPlayers[0] : null;
+    // Sort players by score descending, spectators last
+    const sortedPlayers = [...gameState.players].sort((a, b) => {
+        if (a.isSpectator !== b.isSpectator) return a.isSpectator ? 1 : -1;
+        return (b.totalScore + b.score) - (a.totalScore + a.score);
+    });
+    const contenders = sortedPlayers.filter(p => !p.isSpectator);
+    const winner = contenders.length > 0 ? contenders[0] : null;
+    // Ties are common with distance scoring, so don't crown a single name for one.
+    const tied = winner
+        ? contenders.filter(p => p.totalScore + p.score === winner.totalScore + winner.score)
+        : [];
 
     return (
         <>
@@ -19,10 +27,21 @@ export default function GameOverScreen() {
                 <Trophy size={36} style={{ verticalAlign: 'middle', marginRight: '10px', color: '#f59e0b' }} />
                 Game Over!
             </h1>
-            
+
             {winner && (
                 <p style={{ textAlign: 'center', fontSize: 20, color: 'var(--text-muted)', marginBottom: 20 }}>
-                    <strong style={{ color: winner.color }}>{winner.name}</strong> wins!
+                    {tied.length > 1 ? (
+                        <>It&apos;s a tie between{' '}
+                            {tied.map((p, i) => (
+                                <span key={p.id}>
+                                    {i > 0 && (i === tied.length - 1 ? ' and ' : ', ')}
+                                    <strong style={{ color: p.color }}>{p.name}</strong>
+                                </span>
+                            ))}!
+                        </>
+                    ) : (
+                        <><strong style={{ color: winner.color }}>{winner.name}</strong> wins!</>
+                    )}
                 </p>
             )}
 
@@ -31,7 +50,7 @@ export default function GameOverScreen() {
                     <div key={p.id} className="player-list-item" style={{ fontSize: '18px', padding: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                             <span style={{ width: 25, fontWeight: 'bold', marginRight: 10, color: 'var(--text-muted)' }}>
-                                #{index + 1}
+                                {p.isSpectator ? '—' : `#${index + 1}`}
                             </span>
                             <span className="color-dot" style={{ background: p.color }}></span>
                             {p.name} {p.id === myId ? '(You)' : ''}
@@ -41,17 +60,24 @@ export default function GameOverScreen() {
                 ))}
             </div>
 
-            <button 
-                className="btn btn-secondary" 
-                onClick={() => store.returnToLobby()} 
-                style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}
-            >
-                <Home size={20} style={{ marginRight: '8px' }} /> Return to Lobby
-            </button>
-            
-            {isHost && (
-                <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-muted)', marginTop: '10px' }}>
-                    As the host, returning to the lobby will bring everyone with you.
+            {isHost ? (
+                <>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={() => store.returnToLobby()}
+                        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}
+                    >
+                        <Home size={20} style={{ marginRight: '8px' }} /> Return to Lobby
+                    </button>
+                    <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-muted)', marginTop: '10px' }}>
+                        As the host, returning to the lobby will bring everyone with you.
+                    </p>
+                </>
+            ) : (
+                // Only the host owns the room state; a local hop back to the lobby
+                // would just be undone by the next state broadcast.
+                <p style={{ textAlign: 'center', fontSize: 15, color: 'var(--text-muted)', fontWeight: 600 }}>
+                    Waiting for the host to return to the lobby...
                 </p>
             )}
         </ScaledMenuBox>

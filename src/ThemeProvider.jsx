@@ -1,16 +1,29 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { ThemeContext, THEMES, THEME_STORAGE_KEY } from './ThemeContext';
 
-const ThemeContext = createContext({ theme: 'brutalist', toggleTheme: () => {} });
+function readStoredTheme() {
+    try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        return THEMES.includes(stored) ? stored : THEMES[0];
+    } catch {
+        return THEMES[0];
+    }
+}
 
 export function ThemeProvider({ children, className }) {
-    const [theme, setTheme] = useState('brutalist');
+    const [theme, setTheme] = useState(readStoredTheme);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
+        try {
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
+        } catch {
+            // Storage can be unavailable; the theme still applies for this session.
+        }
     }, [theme]);
 
     const toggleTheme = () => {
-        setTheme(prev => prev === 'brutalist' ? 'cozy' : 'brutalist');
+        setTheme(prev => (prev === 'brutalist' ? 'cozy' : 'brutalist'));
     };
 
     return (
@@ -20,8 +33,4 @@ export function ThemeProvider({ children, className }) {
             </div>
         </ThemeContext.Provider>
     );
-}
-
-export function useTheme() {
-    return useContext(ThemeContext);
 }

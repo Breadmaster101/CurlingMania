@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { store } from './store';
-import { useTheme } from './ThemeProvider';
+import { useTheme } from './ThemeContext';
+
+// The game logic lives in a fixed coordinate space; the backing store is sized
+// to the device instead so the rink is not upscaled on high-DPI screens.
+const LOGICAL_W = 400;
+const LOGICAL_H = 800;
+const MAX_DPR = 3;
 
 export default function GameCanvas() {
     const canvasRef = useRef(null);
@@ -14,16 +20,33 @@ export default function GameCanvas() {
 
     useEffect(() => {
         const canvas = canvasRef.current;
+        if (!canvas) return undefined;
         const ctx = canvas.getContext('2d');
+        if (!ctx) return undefined;
+
         let animationId;
+        // getBoundingClientRect forces layout, so only re-measure when something
+        // actually changed rather than on all 60 frames a second.
+        let needsResize = true;
+
+        const resizeBackingStore = () => {
+            const rect = canvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+            const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+            const width = Math.max(1, Math.round(rect.width * dpr));
+            const height = Math.max(1, Math.round(rect.height * dpr));
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+            }
+        };
 
         const getCanvasPos = (e) => {
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
+            if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
+
             let clientX = e.clientX;
             let clientY = e.clientY;
-            
             if (e.touches && e.touches.length > 0) {
                 clientX = e.touches[0].clientX;
                 clientY = e.touches[0].clientY;
@@ -31,13 +54,27 @@ export default function GameCanvas() {
                 clientX = e.changedTouches[0].clientX;
                 clientY = e.changedTouches[0].clientY;
             }
+            if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return { x: 0, y: 0 };
 
-            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+            return {
+                x: (clientX - rect.left) * (LOGICAL_W / rect.width),
+                y: (clientY - rect.top) * (LOGICAL_H / rect.height),
+            };
         };
 
         const onStart = (e) => store.handleInputStart(getCanvasPos(e));
-        const onMove = (e) => store.handleInputMove(getCanvasPos(e));
+        const onMove = (e) => {
+            if (!store.isGrabbing) return;
+            // Stop the page from scrolling / pull-to-refreshing under the drag.
+            if (e.cancelable) e.preventDefault();
+            store.handleInputMove(getCanvasPos(e));
+        };
         const onEnd = () => store.handleInputEnd();
+        // Losing the pointer (tab switch, context menu, gesture cancel) must not
+        // leave a stone stuck to the cursor.
+        const onCancel = () => {
+            if (store.isGrabbing) store.cancelGrab();
+        };
 
         canvas.addEventListener('mousedown', onStart);
         window.addEventListener('mousemove', onMove, { passive: false });
@@ -45,6 +82,13 @@ export default function GameCanvas() {
         canvas.addEventListener('touchstart', onStart, { passive: false });
         window.addEventListener('touchmove', onMove, { passive: false });
         window.addEventListener('touchend', onEnd);
+        window.addEventListener('touchcancel', onCancel);
+        window.addEventListener('blur', onCancel);
+
+        const markResize = () => { needsResize = true; };
+        const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(markResize) : null;
+        if (resizeObserver) resizeObserver.observe(canvas);
+        window.addEventListener('resize', markResize);
 
         // ─── Brutalist stone (original) ─────────────────────────
         const drawStoneBrutalist = (x, y, color) => {
@@ -79,17 +123,23 @@ export default function GameCanvas() {
         const renderCanvas = () => {
             const isCozy = themeRef.current === 'cozy';
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (needsResize) {
+                needsResize = false;
+                resizeBackingStore();
+            }
+            // Map the fixed 400x800 game space onto the device-sized backing store.
+            ctx.setTransform(canvas.width / LOGICAL_W, 0, 0, canvas.height / LOGICAL_H, 0, 0);
+            ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H);
 
             // Background fill for cozy theme
             if (isCozy) {
                 ctx.fillStyle = '#fdf2f8';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
             }
-            
+
             const state = store.getSnapshot();
             const drawStone = isCozy ? drawStoneKawaii : drawStoneBrutalist;
-            
+
             // House
             const targetX = 200, targetY = 150;
             if (isCozy) {
@@ -128,29 +178,25 @@ export default function GameCanvas() {
             // Placed stones
             state.gameState.stones.forEach(s => drawStone(s.x, s.y, s.color));
 
-            // Active stone
-            if (state.gameState.status === 'PLAYING') {
+            // Active stone. A pending throw is already on its way to the host, so
+            // the stone stays hidden until the host confirms or the retry clears it.
+            if (state.gameState.status === 'PLAYING' && !state.throwPending) {
                 const queue = state.gameState.turnQueue;
                 const qIdx = state.gameState.turnQueueIndex;
                 const currentPlayerId = (queue && qIdx < queue.length) ? queue[qIdx] : null;
                 const currentPlayer = currentPlayerId ? state.gameState.players.find(p => p.id === currentPlayerId) : null;
                 if (currentPlayer && currentPlayer.stonesLeft > 0 && !currentPlayer.isSpectator) {
-                    if (currentPlayer.id === state.myId) {
-                        drawStone(state.activeStone.x, state.activeStone.y, currentPlayer.color);
-                        if (state.isGrabbing) {
-                            if (isCozy) {
-                                ctx.fillStyle = 'rgba(249, 168, 212, 0.15)'; // Soft pink grab highlight
-                            } else {
-                                ctx.fillStyle = 'rgba(251, 191, 36, 0.2)'; // Neo-yellow grab highlight
-                            }
-                            ctx.fillRect(0, 0, 400, 450); 
-                        }
-                    } else {
-                        drawStone(state.activeStone.x, state.activeStone.y, currentPlayer.color);
+                    drawStone(state.activeStone.x, state.activeStone.y, currentPlayer.color);
+                    if (currentPlayer.id === state.myId && state.isGrabbing) {
+                        // Neo grab highlight over the throwing half of the rink
+                        ctx.fillStyle = isCozy
+                            ? 'rgba(249, 168, 212, 0.15)'
+                            : 'rgba(251, 191, 36, 0.2)';
+                        ctx.fillRect(0, 0, 400, 450);
                     }
                 }
             }
-            
+
             animationId = requestAnimationFrame(renderCanvas);
         };
 
@@ -164,13 +210,16 @@ export default function GameCanvas() {
             canvas.removeEventListener('touchstart', onStart);
             window.removeEventListener('touchmove', onMove);
             window.removeEventListener('touchend', onEnd);
+            window.removeEventListener('touchcancel', onCancel);
+            window.removeEventListener('blur', onCancel);
+            window.removeEventListener('resize', markResize);
+            if (resizeObserver) resizeObserver.disconnect();
         };
     }, []);
 
     return (
         <div className="canvas-container">
-            <canvas ref={canvasRef} width="400" height="800"></canvas>
+            <canvas ref={canvasRef} width={LOGICAL_W} height={LOGICAL_H}></canvas>
         </div>
     );
 }
-
